@@ -83,6 +83,12 @@ button{font:inherit;color:inherit}
 .pace{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;background:var(--hero-chip);font-size:.8rem;font-weight:600}
 .pace.ahead{color:var(--hero-bad)}
 .calc{font-family:var(--f-mono);font-size:.72rem;color:var(--hero-muted)}
+.paydays{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.payday{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;background:var(--hero-chip);font-size:.78rem;color:var(--hero-muted)}
+.payday b{color:var(--hero-ink);font-weight:600}
+.payday::before{content:"";width:7px;height:7px;border-radius:50%;flex:none;box-sizing:border-box;border:1.5px solid var(--hero-muted)}
+.payday.ok::before{background:var(--hero-ink);border-color:var(--hero-ink)}
+.payday.past::before{background:var(--hero-muted)}
 .hero .btn{margin-top:14px;background:var(--hero-ink);color:var(--hero);border-color:var(--hero-ink)}
 
 /* cards */
@@ -176,6 +182,9 @@ input::placeholder,textarea::placeholder{color:var(--muted);opacity:.8}
 .edit-row{display:grid;grid-template-columns:auto 1fr 112px auto;gap:8px;align-items:center}
 .edit-row.nofix{grid-template-columns:1fr 112px auto}
 .edit-row .sw{width:14px;height:14px}
+.edit-row.inc,.edit-head{grid-template-columns:1fr 104px 52px 36px}
+.edit-head{display:grid;gap:8px;margin:12px 0 4px;font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.day-in{text-align:center;font-family:var(--f-mono);padding-inline:4px}
 .x-btn{width:36px;height:40px;border-radius:10px;border:1px solid transparent;background:none;color:var(--muted);cursor:pointer;font-size:1.1rem;display:grid;place-items:center;flex:none}
 .x-btn:hover{color:var(--bad);border-color:var(--bad-soft)}
 .x-btn.confirm{background:var(--bad);color:var(--surface);font-size:.7rem;font-weight:700;width:auto;padding:0 8px}
@@ -243,7 +252,7 @@ details ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;
 .toast.warn{background:var(--warn-soft);color:var(--ink);border:1px solid var(--warn)}
 .toast.bad{background:var(--bad-soft);color:var(--ink);border:1px solid var(--bad)}
 
-@media (max-width:380px){.grid2{grid-template-columns:1fr}.edit-row{grid-template-columns:auto 1fr 96px auto}.edit-row.nofix{grid-template-columns:1fr 96px auto}}
+@media (max-width:380px){.grid2{grid-template-columns:1fr}.edit-row{grid-template-columns:auto 1fr 96px auto}.edit-row.nofix{grid-template-columns:1fr 96px auto}.edit-row.inc,.edit-head{grid-template-columns:1fr 92px 46px 36px}}
 @media (prefers-reduced-motion:no-preference){.bar>span,.meter>span{transition:width .35s ease}.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
 
@@ -299,6 +308,11 @@ details ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;
     <div class="field" id="f-cats-wrap">
       <span class="lbl" id="f-cats-l">Catégorie</span>
       <div class="chips" id="f-cats" role="group" aria-labelledby="f-cats-l"></div>
+    </div>
+    <div class="field" id="f-inc-wrap" hidden>
+      <span class="lbl" id="f-inc-l">Ce revenu correspond à</span>
+      <div class="chips" id="f-incs" role="group" aria-labelledby="f-inc-l"></div>
+      <span class="hint" id="f-inc-hint"></span>
     </div>
     <div class="field">
       <label for="f-date">Date</label>
@@ -375,7 +389,7 @@ const NUM = String.raw`\d{1,3}(?:[ .]\d{3})+(?:,\d{1,2})?|\d{1,3}(?:,\d{3})+(?:\
 const RE_AMT_AFTER = new RegExp(String.raw`([-+−]?)\s?(${NUM})\s?(?:€|eur(?:os?)?(?![a-z]))`, 'i');
 const RE_AMT_BEFORE = new RegExp(String.raw`(?:€|eur(?![a-z]))\s?([-+−]?)\s?(${NUM})`, 'i');
 const RE_AMT_BARE = /(?<![\d.,])(\d{1,6},\d{2})(?!\d)/;
-const RE_INCOME = /(vous avez re[çc]u|tu as re[çc]u|virement re[çc]u|virement entrant|a [ée]t[ée] cr[ée]dit[ée]|cr[ée]dit de|remboursement|rembours[ée]|salaire|you received|refund)/i;
+const RE_INCOME = /(vous avez re[çc]u|tu as re[çc]u|virement re[çc]u|virement entrant|a [ée]t[ée] cr[ée]dit[ée]|cr[ée]dit de|remboursement|rembours[ée]|salaire|acompte|\bpaie\b|you received|refund)/i;
 const BANKS = String.raw`cr[ée]dit agricole|cr[ée]dit mutuel|soci[ée]t[ée] g[ée]n[ée]rale|bnp paribas|bnp|lcl|la banque postale|banque postale|boursorama banque|boursorama|boursobank|revolut|n26|lydia|sumeria|qonto|shine|hello ?bank!?|fortuneo|monabanq|caisse d'[ée]pargne|banque populaire|cic|ing|orange bank|nickel|wise|bforbank|ma french bank|google wallet|apple wallet|wallet`;
 const RE_BANKS = new RegExp(String.raw`(?<![\p{L}\d])(?:${BANKS})(?![\p{L}\d])`, 'giu');
 const STOPS = String.raw`nouvelle op[ée]ration|nouvelle transaction|nouvelle d[ée]pense|nouveau paiement|op[ée]ration par carte|op[ée]ration carte|op[ée]ration cb|op[ée]ration|transaction|paiement par carte|paiement carte|paiement cb|paiement sans contact|paiement mobile|paiement|payment|achat cb|achat carte|achat|d[ée]pense|d[ée]bit carte|d[ée]bit cb|d[ée]bit|pr[ée]l[èe]vement|retrait|carte bancaire|carte|cb|card|visa|mastercard|vous avez pay[ée]|tu as pay[ée]|you paid|pay[ée]e?|accept[ée]e?|autoris[ée]e?|effectu[ée]e?|valid[ée]e?|r[ée]alis[ée]e?|sans contact|apple pay|google pay|samsung pay|de|du|des|d'|en|sur|par|pour|chez|aupr[èe]s de|à|at|votre|ta|ton|montant|euros?|eur|€|notification|alerte|info`;
@@ -503,7 +517,7 @@ const DEFAULT_CATS = [
   { id: 'abonnements', name: 'Abonnements', color: 5, share: 0.05 },
   { id: 'autre', name: 'Autre', color: 7, share: 0.08 },
 ];
-const defaultSettings = () => ({ v: 1, income: 0, savings: 0, fixed: [], cats: DEFAULT_CATS.map(({ id, name, color }) => ({ id, name, color, budget: 0 })), memory: {} });
+const defaultSettings = () => ({ v: 2, incomes: [], savings: 0, fixed: [], cats: DEFAULT_CATS.map(({ id, name, color }) => ({ id, name, color, budget: 0 })), memory: {} });
 
 function normalizeSettings(raw) {
   const d = defaultSettings();
@@ -517,7 +531,11 @@ function normalizeSettings(raw) {
   const fixed = Array.isArray(raw.fixed) ? raw.fixed.filter(f => f && typeof f === 'object').map(f => ({ id: str(f.id, 40) || rid('f'), name: str(f.name, 40), amount: num(f.amount) })) : [];
   const memory = {};
   if (raw.memory && typeof raw.memory === 'object') for (const [k, v] of Object.entries(raw.memory)) if (typeof v === 'string') memory[k.slice(0, 60)] = v.slice(0, 40);
-  return { v: 1, income: num(raw.income), savings: num(raw.savings), fixed, cats, memory };
+  let incomes = Array.isArray(raw.incomes)
+    ? raw.incomes.filter(i => i && typeof i === 'object').map(i => ({ id: str(i.id, 40) || rid('i'), name: str(i.name, 40), amount: num(i.amount), day: Number.isInteger(i.day) && i.day >= 1 && i.day <= 31 ? i.day : 0 }))
+    : [];
+  if (!Array.isArray(raw.incomes) && num(raw.income) > 0) incomes = [{ id: 'i1', name: 'Salaire', amount: num(raw.income), day: 0 }];
+  return { v: 2, incomes, savings: num(raw.savings), fixed, cats, memory };
 }
 
 function cleanTx(id, t, ym) {
@@ -525,7 +543,7 @@ function cleanTx(id, t, ym) {
   const amount = typeof t.amount === 'number' && Number.isFinite(t.amount) && t.amount > 0 ? t.amount : 0;
   if (!amount) return null;
   const date = typeof t.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.date) ? t.date : `${ym}-01`;
-  return { id, ym, amount, kind: t.kind === 'in' ? 'in' : 'out', label: typeof t.label === 'string' ? t.label.slice(0, 60) : '', cat: typeof t.cat === 'string' ? t.cat : 'autre', date, src: t.src === 'notif' ? 'notif' : 'manuel', created: typeof t.created === 'number' ? t.created : 0 };
+  return { id, ym, amount, kind: t.kind === 'in' ? 'in' : 'out', label: typeof t.label === 'string' ? t.label.slice(0, 60) : '', cat: typeof t.cat === 'string' ? t.cat : 'autre', date, src: t.src === 'notif' ? 'notif' : 'manuel', created: typeof t.created === 'number' ? t.created : 0, inc: typeof t.inc === 'string' ? t.inc.slice(0, 40) : '' };
 }
 
 const real = { settings: defaultSettings(), months: {}, hasSettings: false, hasData: false };
@@ -550,20 +568,28 @@ function stats(ym) {
   const txs = txOf(ym);
   const out = txs.filter(t => t.kind === 'out');
   const inc = txs.filter(t => t.kind === 'in');
-  const spent = sum(out), extra = sum(inc);
+  const dim = daysIn(ym), now = curYM();
+  const isCurrent = ym === now, isPast = ym < now, isFuture = ym > now;
+  const today = new Date().getDate();
+  /* Chaque versement prévu (acompte, solde…) compte pour son montant prévu,
+     remplacé par le montant réellement reçu dès qu'une opération y est reliée. */
+  const sources = st.incomes.map(i => {
+    const got = inc.filter(t => t.inc === i.id);
+    return { ...i, day: i.day ? Math.min(i.day, dim) : 0, actual: sum(got), received: got.length > 0, value: got.length ? sum(got) : i.amount };
+  });
+  const ids = new Set(st.incomes.map(i => i.id));
+  const spent = sum(out), extra = sum(inc.filter(t => !ids.has(t.inc)));
   const fixed = st.fixed.reduce((a, f) => a + f.amount, 0);
-  const income = st.income + extra;
+  const base = st.incomes.reduce((a, i) => a + i.amount, 0);
+  const income = sources.reduce((a, x) => a + x.value, 0) + extra;
   const available = income - fixed - st.savings;
   const remaining = available - spent;
   const byCat = {};
   for (const t of out) { const c = catOf(t.cat, st).id; byCat[c] = (byCat[c] || 0) + t.amount; }
-  const dim = daysIn(ym), now = curYM();
-  const isCurrent = ym === now, isPast = ym < now, isFuture = ym > now;
-  const today = new Date().getDate();
   const dayIdx = isCurrent ? today : isPast ? dim : 0;
   const daysLeft = isCurrent ? dim - today + 1 : 0;
   const expected = available * dayIdx / dim;
-  return { txs, out, inc, spent, extra, fixed, income, base: st.income, available, remaining, byCat, dim, isCurrent, isPast, isFuture, dayIdx, daysLeft, expected, perDay: daysLeft > 0 ? remaining / daysLeft : null, delta: spent - expected };
+  return { txs, out, inc, spent, extra, fixed, income, base, sources, available, remaining, byCat, dim, isCurrent, isPast, isFuture, today, dayIdx, daysLeft, expected, perDay: daysLeft > 0 ? remaining / daysLeft : null, delta: spent - expected };
 }
 
 /* ---------- storage ---------- */
@@ -684,7 +710,7 @@ function makeDemo() {
   let a = 20261121;
   const rnd = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const budgets = { courses: 320, resto: 140, transport: 110, shopping: 120, loisirs: 100, sante: 40, maison: 90, abonnements: 45, autre: 80 };
-  const settings = { v: 1, income: 2100, savings: 250, fixed: [{ id: 'f1', name: 'Loyer', amount: 720 }, { id: 'f2', name: 'Forfait mobile', amount: 15 }, { id: 'f3', name: 'Assurance habitation', amount: 28 }], cats: DEFAULT_CATS.map(({ id, name, color }) => ({ id, name, color, budget: budgets[id] })), memory: {} };
+  const settings = { v: 2, incomes: [{ id: 'i1', name: 'Acompte', amount: 600, day: 15 }, { id: 'i2', name: 'Solde', amount: 1500, day: 30 }], savings: 250, fixed: [{ id: 'f1', name: 'Loyer', amount: 720 }, { id: 'f2', name: 'Forfait mobile', amount: 15 }, { id: 'f3', name: 'Assurance habitation', amount: 28 }], cats: DEFAULT_CATS.map(({ id, name, color }) => ({ id, name, color, budget: budgets[id] })), memory: {} };
   const pool = [
     ['Carrefour City', 'courses', 12, 48, 5], ['Lidl', 'courses', 25, 70, 3], ['Boulangerie Ange', 'courses', 3, 9, 4], ['Monoprix', 'courses', 8, 35, 3],
     ['Starbucks', 'resto', 4, 7, 3], ['Uber Eats', 'resto', 16, 32, 2], ['Le Petit Bistrot', 'resto', 18, 42, 2], ['Pret A Manger', 'resto', 8, 13, 2],
@@ -700,10 +726,12 @@ function makeDemo() {
     const ym = ymShift(curYM(), -k);
     const last = k === 0 ? now.getDate() : daysIn(ym);
     const tx = {};
-    const add = (label, cat, amount, day, kind = 'out', src) => {
+    const add = (label, cat, amount, day, kind = 'out', src, inc = '') => {
       const id = 't' + ym.replace('-', '') + Object.keys(tx).length;
-      tx[id] = { amount: round2(amount), kind, label, cat, date: `${ym}-${pad(Math.min(day, last))}`, src: src || (rnd() < 0.65 ? 'notif' : 'manuel'), created: day * 1000 + Object.keys(tx).length };
+      tx[id] = { amount: round2(amount), kind, label, cat, date: `${ym}-${pad(Math.min(day, last))}`, src: src || (rnd() < 0.65 ? 'notif' : 'manuel'), created: day * 1000 + Object.keys(tx).length, inc };
     };
+    if (last >= 15) add('Acompte salaire', 'revenu', 600, 15, 'in', 'notif', 'i1');
+    if (k > 0) add('Solde salaire', 'revenu', 1460 + Math.round(rnd() * 110), 30, 'in', 'notif', 'i2');
     add('Navigo', 'transport', 86.4, 2); add('Spotify', 'abonnements', 11.12, 5); add('Netflix', 'abonnements', 13.49, 12);
     if (last >= 8) add('EDF', 'maison', 48, 8);
     const n = Math.round(last * (k === 0 ? 0.95 : 0.9 + rnd() * 0.3));
@@ -764,8 +792,8 @@ function heroHTML(s) {
     return `<section class="hero"><canvas id="guilloche" aria-hidden="true"></canvas>
       <div class="eyebrow">Dépensé en ${esc(mName)}</div>
       <div class="big">${eur(s.spent)}</div>
-      <div class="hero-sub">${plural(s.out.length, 'dépense', 'dépenses')}. Indique ton revenu mensuel pour savoir combien il te reste.</div>
-      <button class="btn" type="button" data-go="budgets">Indiquer mon revenu</button></section>`;
+      <div class="hero-sub">${plural(s.out.length, 'dépense', 'dépenses')}. Indique tes revenus (salaire, acompte, solde…) pour savoir combien il te reste.</div>
+      <button class="btn" type="button" data-go="budgets">Indiquer mes revenus</button></section>`;
   }
   const over = s.remaining < 0;
   const pct = s.available > 0 ? Math.min(100, s.spent / s.available * 100) : 100;
@@ -790,16 +818,28 @@ function heroHTML(s) {
   return `<section class="hero"><canvas id="guilloche" aria-hidden="true"></canvas>
     <div class="eyebrow">${eyebrow}</div>
     <div class="big${over ? ' neg' : ''}">${eur(s.remaining)}</div>
-    <div class="hero-sub">${sub}</div>
+    <div class="hero-sub">${sub}</div>${paydaysHTML(s)}
     <div class="meter" role="img" aria-label="${Math.round(pct)} % du budget dépensé"><span class="${over ? 'over' : ''}" style="width:${pct.toFixed(1)}%"></span>${marker}</div>
     <div class="hero-row"><span>Dépensé ${eur(s.spent)}</span><span>Budget ${eur(s.available)}</span></div>
     <div class="hero-foot">${pace}<span class="calc">${esc(calcParts.join(' − '))}</span></div>
   </section>`;
 }
 
+function paydaysHTML(s) {
+  if (!s.sources.length) return '';
+  const chips = s.sources.map(x => {
+    let cls = 'wait', status = x.day ? `le ${x.day}` : '';
+    if (x.received) { cls = 'ok'; status = 'reçu'; }
+    else if (s.isPast || (s.isCurrent && x.day && x.day <= s.today)) cls = 'past';
+    else if (s.isCurrent && x.day) { const n = x.day - s.today; status = `le ${x.day}, dans ${plural(n, 'jour', 'jours')}`; }
+    return `<span class="payday ${cls}"><b>${esc(x.name || 'Revenu')}</b> ${esc(eur0(x.value))}${status ? ' · ' + esc(status) : ''}</span>`;
+  });
+  return `<div class="paydays" aria-label="Versements du mois">${chips.join('')}</div>`;
+}
+
 function welcomeHTML() {
   return `<section class="card welcome"><h2>Bienvenue dans Pécule</h2>
-    <ol><li>Note ton revenu et tes charges fixes dans <b>Budgets</b>.</li><li>Relie les notifications de ta banque dans <b>Notifs</b>.</li><li>Ajoute ta première dépense avec le bouton <b>+</b>.</li></ol>
+    <ol><li>Note tes revenus (acompte, solde…) et tes charges fixes dans <b>Budgets</b>.</li><li>Relie les notifications de ta banque dans <b>Notifs</b>.</li><li>Ajoute ta première dépense avec le bouton <b>+</b>.</li></ol>
     <div class="row"><button class="btn primary" type="button" data-go="budgets">Commencer</button><button class="btn" type="button" data-act="demo-on">Voir un exemple rempli</button></div></section>`;
 }
 
@@ -826,7 +866,8 @@ function txRow(t, st) {
   const isIn = t.kind === 'in';
   const c = isIn ? { name: 'Revenu', color: 3 } : catOf(t.cat, st);
   const initial = (t.label || c.name || '?').trim().charAt(0).toUpperCase() || '?';
-  const meta = [isIn ? 'Revenu' : catName(c)];
+  const source = isIn && t.inc ? st.incomes.find(i => i.id === t.inc) : null;
+  const meta = [isIn ? (source ? `Revenu · ${source.name || 'versement prévu'}` : 'Revenu en plus') : catName(c)];
   if (t.src === 'notif') meta.push('notif');
   return `<button class="tx" type="button" data-tx="${esc(t.id)}" data-ym="${esc(t.ym)}" style="--c:var(--c${c.color})"><span class="tx-ico" aria-hidden="true">${esc(initial)}</span><span class="tx-main"><span class="tx-label">${esc(t.label || (isIn ? 'Revenu' : 'Dépense'))}</span><span class="tx-meta">${esc(meta.join(' · '))}</span></span><span class="tx-amt mono${isIn ? ' in' : ''}">${isIn ? '+' : '−'}${eur(t.amount)}</span></button>`;
 }
@@ -874,7 +915,7 @@ function renderOps() {
     .concat(st.cats.filter(c => s.byCat[c.id]).map(c => `<button class="chip" type="button" data-filter="${esc(c.id)}" aria-pressed="${S.filter === c.id}" style="--c:var(--c${c.color})"><i></i>${esc(catName(c))}</button>`));
   if (s.inc.length) chips.push(`<button class="chip" type="button" data-filter="in" aria-pressed="${S.filter === 'in'}" style="--c:var(--c3)"><i></i>Revenus</button>`);
   el.innerHTML = `${monthNav()}
-    <div class="totals"><span>Dépenses <b>${eur(s.spent)}</b></span>${s.extra ? `<span>Revenus en plus <b>+${eur(s.extra)}</b></span>` : ''}<span>${plural(s.txs.length, 'opération', 'opérations')}</span></div>
+    <div class="totals"><span>Dépenses <b>${eur(s.spent)}</b></span>${s.inc.length ? `<span>Revenus reçus <b>+${eur(sum(s.inc))}</b></span>` : ''}<span>${plural(s.txs.length, 'opération', 'opérations')}</span></div>
     <div class="search"><input id="ops-q" type="search" placeholder="Chercher un commerçant…" value="${esc(S.q)}" autocomplete="off" aria-label="Chercher une opération"></div>
     <div class="chips scroll" role="group" aria-label="Filtrer par catégorie">${chips.join('')}</div>
     <section class="card" id="ops-list"></section>`;
@@ -908,18 +949,20 @@ const fmtIn = n => (n ? (Number.isInteger(round2(n)) ? String(round2(n)) : round
 function renderBudgets(fromSnap) {
   const el = $('#v-budgets');
   if (!S.loaded) { el.innerHTML = '<section class="card empty">Chargement de tes comptes…</section>'; return; }
-  if (fromSnap && el.querySelector('#b-income') && el.contains(document.activeElement)) { updateBudgetSummary(); return; }
+  if (fromSnap && el.querySelector('#b-savings') && el.contains(document.activeElement)) { updateBudgetSummary(); return; }
   const st = cur().settings;
+  const incRows = st.incomes.map(i => `<div class="edit-row inc"><input id="in-n-${esc(i.id)}" data-income="${esc(i.id)}" data-f="name" value="${esc(i.name)}" maxlength="40" placeholder="Ex. : Acompte" aria-label="Nom du versement"><div class="money"><input id="in-a-${esc(i.id)}" data-income="${esc(i.id)}" data-f="amount" inputmode="decimal" value="${fmtIn(i.amount)}" placeholder="0" aria-label="Montant net prévu"></div><input class="day-in" id="in-d-${esc(i.id)}" data-income="${esc(i.id)}" data-f="day" inputmode="numeric" maxlength="2" value="${i.day || ''}" placeholder="—" aria-label="Jour du versement dans le mois"><button class="x-btn" type="button" data-act="del-income" data-id="${esc(i.id)}" aria-label="Retirer ce versement">×</button></div>`).join('');
   const fixedRows = st.fixed.map(f => `<div class="edit-row nofix"><input id="fx-n-${esc(f.id)}" data-fixed="${esc(f.id)}" data-f="name" value="${esc(f.name)}" placeholder="Ex. : Loyer" aria-label="Nom de la charge"><div class="money"><input id="fx-a-${esc(f.id)}" data-fixed="${esc(f.id)}" data-f="amount" inputmode="decimal" value="${fmtIn(f.amount)}" placeholder="0" aria-label="Montant mensuel"></div><button class="x-btn" type="button" data-act="del-fixed" data-id="${esc(f.id)}" aria-label="Retirer cette charge">×</button></div>`).join('');
   const catRows = st.cats.map(c => `<div class="edit-row" style="--c:var(--c${c.color})"><span class="sw"></span><input id="ct-n-${esc(c.id)}" data-cat="${esc(c.id)}" data-f="name" value="${esc(c.name)}" maxlength="40" aria-label="Nom de la catégorie"><div class="money"><input id="ct-b-${esc(c.id)}" data-cat="${esc(c.id)}" data-f="budget" inputmode="decimal" value="${fmtIn(c.budget)}" placeholder="0" aria-label="Budget mensuel ${esc(c.name)}"></div><button class="x-btn" type="button" data-act="del-cat" data-id="${esc(c.id)}" aria-label="Supprimer la catégorie" ${c.id === 'autre' ? 'disabled' : ''}>×</button></div>`).join('');
   const modeTxt = S.demo ? "Mode exemple : rien n'est enregistré." : S.store === 'cloud' ? 'Tes données sont liées à ton compte Claude et synchronisées entre ton téléphone et ton ordinateur. Personne d’autre ne peut les lire, même si tu partages cette page.' : 'Tes données sont enregistrées dans ce navigateur uniquement. Elles disparaissent si tu effaces les données du site.';
   const memCount = Object.keys(st.memory).length;
   el.innerHTML = `
-    <section class="card"><h2>Ton mois type</h2>
-      <div class="grid2">
-        <div class="field"><label for="b-income">Revenu mensuel net</label><div class="money"><input id="b-income" data-k="income" inputmode="decimal" value="${fmtIn(st.income)}" placeholder="0"></div></div>
-        <div class="field"><label for="b-savings">Épargne visée</label><div class="money"><input id="b-savings" data-k="savings" inputmode="decimal" value="${fmtIn(st.savings)}" placeholder="0"></div></div>
-      </div>
+    <section class="card"><h2>Tes revenus <small>versés chaque mois</small></h2>
+      <p class="hint">Ajoute chaque versement à part, par exemple ton acompte et ton solde, avec le jour où il arrive. Quand tu colles la notification du virement, le montant réellement reçu remplace le montant prévu pour ce mois.</p>
+      ${incRows ? `<div class="edit-head" aria-hidden="true"><span>Versement</span><span>Net prévu</span><span>Jour</span><span></span></div><div class="edit-list">${incRows}</div>` : ''}
+      <div class="row" style="margin-top:${incRows ? '0' : '12px'}">${st.incomes.length ? '' : '<button class="btn small primary" type="button" data-act="preset-pay">J’ai un acompte et un solde</button>'}<button class="btn small" type="button" data-act="add-income">+ Ajouter un versement</button></div>
+      <div class="sum-line"><span class="muted">Total prévu par mois</span><b id="b-incsum"></b></div>
+      <div class="field" style="margin-top:16px"><label for="b-savings">Épargne visée chaque mois</label><div class="money"><input id="b-savings" data-k="savings" inputmode="decimal" value="${fmtIn(st.savings)}" placeholder="0"></div></div>
       <p class="hint" id="b-savehint" style="margin-top:8px"></p>
     </section>
     <section class="card"><h2>Charges fixes <small>prélevées chaque mois</small></h2>
@@ -949,18 +992,20 @@ function renderBudgets(fromSnap) {
 
 function updateBudgetSummary() {
   const st = cur().settings;
+  const income = st.incomes.reduce((a, i) => a + i.amount, 0);
   const fixed = st.fixed.reduce((a, f) => a + f.amount, 0);
-  const avail = st.income - fixed - st.savings;
+  const avail = income - fixed - st.savings;
   const assigned = st.cats.reduce((a, c) => a + c.budget, 0);
   const set = (id, v) => { const n = document.getElementById(id); if (n) n.textContent = v; };
+  set('b-incsum', eur(income));
   set('b-fixedsum', eur(fixed));
-  set('b-avail', st.income > 0 ? eur0(avail) : '—');
-  set('b-assigned', `${eur0(assigned)} sur ${st.income > 0 ? eur0(Math.max(0, avail)) : '—'}`);
+  set('b-avail', income > 0 ? eur0(avail) : '—');
+  set('b-assigned', `${eur0(assigned)} sur ${income > 0 ? eur0(Math.max(0, avail)) : '—'}`);
   const bar = $('#b-assigned-bar');
   if (bar) bar.style.width = (avail > 0 ? Math.min(100, assigned / avail * 100) : 0).toFixed(1) + '%';
   const left = avail - assigned;
-  set('b-assigned-hint', !(st.income > 0) ? 'Indique ton revenu pour calculer ce que tu peux répartir.' : left >= 1 ? `Il reste ${eur0(left)} à répartir.` : left <= -1 ? `Tu as réparti ${eur0(-left)} de trop : baisse un budget.` : 'Tout ton budget est réparti.');
-  set('b-savehint', st.income > 0 ? `Repère courant : mettre de côté 10 à 20 % du revenu, soit ${eur0(st.income * 0.1)} à ${eur0(st.income * 0.2)} par mois.` : 'Le revenu sert à calculer ce qu’il te reste à dépenser chaque jour.');
+  set('b-assigned-hint', !(income > 0) ? 'Indique tes revenus pour calculer ce que tu peux répartir.' : left >= 1 ? `Il reste ${eur0(left)} à répartir.` : left <= -1 ? `Tu as réparti ${eur0(-left)} de trop : baisse un budget.` : 'Tout ton budget est réparti.');
+  set('b-savehint', income > 0 ? `Repère courant : mettre de côté 10 à 20 % des revenus, soit ${eur0(income * 0.1)} à ${eur0(income * 0.2)} par mois.` : 'Tes revenus servent à calculer ce qu’il te reste à dépenser chaque jour.');
 }
 
 function linkFor(hash) { return APP_LINK ? `${APP_LINK}#${hash}` : ''; }
@@ -1010,12 +1055,12 @@ function renderNotifs(fromSnap) {
       ${ios ? iosSteps : androidSteps}
     </section>
     <section class="card"><h2>Tester la lecture</h2>
-      <p class="hint">Colle le texte d’une vraie notification de ta banque, ou essaie un exemple.</p>
+      <p class="hint">Colle le texte d’une vraie notification de ta banque, ou essaie un exemple. Les virements de salaire marchent aussi : Pécule les relie à ton acompte ou à ton solde.</p>
       <div class="row" style="margin:10px 0">
         <button class="btn small" type="button" data-sample="Paiement par carte de 23,90 € accepté chez CARREFOUR CITY le 21/11">Banque</button>
         <button class="btn small" type="button" data-sample="Vous avez payé 4,50 € à Starbucks">Revolut</button>
         <button class="btn small" type="button" data-sample="Achat CB SUMUP *BOULANGERIE ANGE 6,80€">Commerçant SumUp</button>
-        <button class="btn small" type="button" data-sample="Virement reçu de 150,00 € de Camille">Virement reçu</button>
+        <button class="btn small" type="button" data-sample="Virement reçu de 600,00 € : ACOMPTE SALAIRE NOVEMBRE">Acompte de salaire</button>
       </div>
       <textarea id="t-paste" rows="3" placeholder="Texte de la notification…">${esc(S.test)}</textarea>
       <div id="t-out"></div>
@@ -1031,7 +1076,11 @@ function renderTest() {
   const p = parseNotif(S.test);
   if (!p) { out.innerHTML = ''; return; }
   const st = cur().settings;
-  const cat = p.kind === 'in' ? 'Revenu' : catName(catOf(guessCat(p.label, st), st));
+  let cat = catName(catOf(guessCat(p.label, st), st));
+  if (p.kind === 'in') {
+    const src = st.incomes.find(i => i.id === guessInc(p.label, p.date, p.amount || 0));
+    cat = src ? `Revenu relié à « ${src.name || 'versement prévu'} »` : 'Revenu en plus';
+  }
   out.innerHTML = `<dl class="parse-out"><dt>Montant</dt><dd>${p.amount ? eur(p.amount) : '<span class="err">non trouvé</span>'}</dd><dt>Type</dt><dd>${p.kind === 'in' ? 'Revenu' : 'Dépense'}</dd><dt>Libellé</dt><dd>${esc(p.label || '—')}</dd><dt>Catégorie</dt><dd>${esc(cat)}</dd><dt>Date</dt><dd>${esc(dayLabel(p.date))}</dd></dl>
     ${p.amount ? '<button class="btn primary small" type="button" data-act="test-add" style="margin-top:12px">Ajouter cette opération</button>' : ''}`;
 }
@@ -1130,7 +1179,44 @@ function drawHistory(s) {
 }
 
 /* ---------- sheet ---------- */
-const sheet = { editing: null, kind: 'out', cat: 'autre', catTouched: false, src: 'manuel', delArmed: false };
+const sheet = { editing: null, kind: 'out', cat: 'autre', catTouched: false, inc: '', incTouched: false, src: 'manuel', delArmed: false };
+
+/* Relie un revenu reçu à un versement prévu : par son nom, par les mots
+   « salaire / paie / acompte », puis par le montant le plus proche. */
+function guessInc(label, date, amount) {
+  const st = cur().settings;
+  if (!st.incomes.length) return '';
+  const k = ` ${normKey(label)} `;
+  for (const i of st.incomes) { const n = normKey(i.name); if (n.length >= 3 && k.includes(` ${n}`)) return i.id; }
+  const iso = /^\d{4}-\d{2}-\d{2}$/.test(date || '') ? date : todayISO();
+  const got = new Set(txOf(iso.slice(0, 7)).filter(t => t.kind === 'in' && t.inc && !(sheet.editing && t.id === sheet.editing.id)).map(t => t.inc));
+  const open = st.incomes.filter(i => !got.has(i.id));
+  if (!open.length) return '';
+  if (amount > 0) {
+    const close = open.filter(i => i.amount > 0 && Math.abs(amount - i.amount) / i.amount <= 0.25).sort((a, b) => Math.abs(amount - a.amount) - Math.abs(amount - b.amount));
+    if (close.length) return close[0].id;
+  }
+  if (/ (salaire|paie|remuneration|acompte|virement salaire) /.test(k)) {
+    const d = +iso.slice(8, 10);
+    return open.slice().sort((a, b) => Math.abs((a.day || d) - d) - Math.abs((b.day || d) - d))[0].id;
+  }
+  return '';
+}
+function renderSheetIncs() {
+  const st = cur().settings;
+  const chips = st.incomes.map(i => `<button class="chip" type="button" data-inc="${esc(i.id)}" aria-pressed="${i.id === sheet.inc}" style="--c:var(--c3)"><i></i>${esc(i.name || 'Versement')}</button>`);
+  chips.push(`<button class="chip" type="button" data-inc="" aria-pressed="${!sheet.inc}"><i></i>Revenu en plus</button>`);
+  $('#f-incs').innerHTML = chips.join('');
+  const src = st.incomes.find(i => i.id === sheet.inc);
+  $('#f-inc-hint').textContent = src
+    ? `Le montant reçu remplace les ${eur0(src.amount)} prévus pour « ${src.name || 'ce versement'} » ce mois-ci.`
+    : 'Compté en plus de tes revenus habituels : remboursement, prime, cadeau…';
+}
+function refreshIncGuess() {
+  if (sheet.kind !== 'in' || sheet.incTouched) return;
+  sheet.inc = guessInc($('#f-label').value, $('#f-date').value, Math.abs(toNumber($('#f-amount').value)) || 0);
+  renderSheetIncs();
+}
 
 function openSheet(opts = {}) {
   const st = cur().settings;
@@ -1147,6 +1233,8 @@ function openSheet(opts = {}) {
   $('#f-parsed').hidden = true;
   $('#f-err').hidden = true;
   sheet.cat = t ? catOf(t.cat, st).id : guessCat(pre.label || '', st);
+  sheet.incTouched = !!t;
+  sheet.inc = t ? (t.inc || '') : sheet.kind === 'in' ? guessInc(pre.label || '', pre.date, pre.amount || 0) : '';
   $('#sheet-title').textContent = t ? 'Modifier l’opération' : 'Nouvelle opération';
   const del = $('#f-delete'); del.hidden = !t; del.classList.remove('confirm'); del.textContent = 'Supprimer';
   $('#paste-box').hidden = !!t;
@@ -1160,6 +1248,8 @@ function closeSheet() { $('#scrim').hidden = true; document.body.classList.remov
 function renderSheetKind() {
   document.querySelectorAll('#f-kind button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.kind === sheet.kind)));
   $('#f-cats-wrap').hidden = sheet.kind === 'in';
+  $('#f-inc-wrap').hidden = !(sheet.kind === 'in' && cur().settings.incomes.length);
+  renderSheetIncs();
 }
 function renderSheetCats() {
   const st = cur().settings;
@@ -1186,9 +1276,11 @@ function onPasteInput() {
   $('#f-date').value = p.date;
   sheet.kind = p.kind;
   if (!sheet.catTouched) sheet.cat = guessCat(p.label, st);
+  if (p.kind === 'in' && !sheet.incTouched) sheet.inc = guessInc(p.label, p.date, p.amount || 0);
   renderSheetKind(); renderSheetCats(); checkFixedWarn();
   out.hidden = false;
-  if (p.amount) { out.className = 'parsed'; out.textContent = `Lu : ${eur(p.amount)}${p.label ? ' · ' + p.label : ''}${p.kind === 'in' ? ' · revenu' : ' · ' + catName(catOf(sheet.cat, st))}`; }
+  const srcName = (st.incomes.find(i => i.id === sheet.inc) || {}).name;
+  if (p.amount) { out.className = 'parsed'; out.textContent = `Lu : ${eur(p.amount)}${p.label ? ' · ' + p.label : ''}${p.kind === 'in' ? ` · revenu${srcName ? ' (' + srcName + ')' : ''}` : ' · ' + catName(catOf(sheet.cat, st))}`; }
   else { out.className = 'parsed miss'; out.textContent = 'Pas de montant trouvé dans ce texte. Saisis-le ci-dessous.'; }
 }
 
@@ -1218,9 +1310,11 @@ async function submitSheet(e) {
   const old = sheet.editing;
   const id = old ? old.id : rid('t');
   const ym = date.slice(0, 7);
-  const tx = { amount, kind, label, cat, date, src: sheet.src, created: old && old.created ? old.created : Date.now() };
+  const incId = kind === 'in' && st.incomes.some(i => i.id === sheet.inc) ? sheet.inc : '';
+  const tx = { amount, kind, label, cat, date, src: sheet.src, created: old && old.created ? old.created : Date.now(), inc: incId };
 
-  let msg = old ? 'Opération modifiée' : kind === 'in' ? `Revenu de ${eur(amount)} ajouté` : `Dépense de ${eur(amount)} ajoutée`;
+  const incSrc = st.incomes.find(i => i.id === incId);
+  let msg = old ? 'Opération modifiée' : kind === 'in' ? (incSrc ? `${incSrc.name || 'Versement'} de ${eur(amount)} reçu : budget du mois mis à jour` : `Revenu de ${eur(amount)} ajouté`) : `Dépense de ${eur(amount)} ajoutée`;
   let tone = '';
   if (kind === 'out') {
     const c = catOf(cat, st);
@@ -1292,7 +1386,7 @@ async function askAdvice() {
   const top = Object.entries(merchants).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([nom, total]) => ({ nom, total: round2(total) }));
   const data = {
     mois: ymLabel(S.ym), avancement: s.isCurrent ? `jour ${s.dayIdx} sur ${s.dim}` : s.isPast ? 'mois terminé' : 'mois à venir',
-    revenu_mensuel: st.income, revenus_en_plus: round2(s.extra), charges_fixes: round2(s.fixed), epargne_visee: st.savings,
+    versements: s.sources.map(x => ({ nom: x.name, prevu: x.amount, recu: x.received ? round2(x.actual) : null, jour: x.day || null })), revenus_en_plus: round2(s.extra), charges_fixes: round2(s.fixed), epargne_visee: st.savings,
     disponible_pour_depenses: round2(s.available), depense: round2(s.spent), reste: round2(s.remaining),
     categories: st.cats.map(c => ({ nom: c.name, budget: c.budget, depense: round2(s.byCat[c.id] || 0) })).filter(c => c.budget || c.depense),
     principaux_commercants: top,
@@ -1319,8 +1413,8 @@ Puces attendues : 1) le constat du mois en une phrase, 2) la catégorie à surve
 function suggestBudgets() {
   const st = clone(cur().settings);
   const fixed = st.fixed.reduce((a, f) => a + f.amount, 0);
-  const avail = st.income - fixed - st.savings;
-  if (!(avail > 0)) { toast('Indique d’abord un revenu supérieur à tes charges fixes et à ton épargne.', 'warn'); return; }
+  const avail = st.incomes.reduce((a, i) => a + i.amount, 0) - fixed - st.savings;
+  if (!(avail > 0)) { toast('Indique d’abord des revenus supérieurs à tes charges fixes et à ton épargne.', 'warn'); return; }
   const shares = Object.fromEntries(DEFAULT_CATS.map(c => [c.id, c.share]));
   const known = st.cats.filter(c => shares[c.id]);
   const total = known.reduce((a, c) => a + shares[c.id], 0) || 1;
@@ -1385,6 +1479,13 @@ function bind() {
     else if (act === 'export') exportCSV();
     else if (act === 'suggest') suggestBudgets();
     else if (act === 'forget') { editSettings(s => { s.memory = {}; }); renderBudgets(); toast('Commerçants oubliés'); }
+    else if (act === 'preset-pay') {
+      const a = rid('i'), b = rid('i');
+      editSettings(s => { s.incomes.push({ id: a, name: 'Acompte', amount: 0, day: 15 }, { id: b, name: 'Solde', amount: 0, day: 30 }); });
+      renderBudgets(); const n = document.getElementById('in-a-' + a); if (n) n.focus();
+    }
+    else if (act === 'add-income') { const id = rid('i'); editSettings(s => { s.incomes.push({ id, name: '', amount: 0, day: 0 }); }); renderBudgets(); const n = document.getElementById('in-n-' + id); if (n) n.focus(); }
+    else if (act === 'del-income') { editSettings(s => { s.incomes = s.incomes.filter(i => i.id !== t.dataset.id); }); renderBudgets(); }
     else if (act === 'add-fixed') { const id = rid('f'); editSettings(s => { s.fixed.push({ id, name: '', amount: 0 }); }); renderBudgets(); const n = document.getElementById('fx-n-' + id); if (n) n.focus(); }
     else if (act === 'del-fixed') { editSettings(s => { s.fixed = s.fixed.filter(f => f.id !== t.dataset.id); }); renderBudgets(); }
     else if (act === 'add-cat') {
@@ -1406,6 +1507,17 @@ function bind() {
     if (t.id === 't-paste') { S.test = t.value; renderTest(); return; }
     if (!$('#v-budgets').contains(t)) return;
     if (t.dataset.k) { const v = Math.max(0, toNumber(t.value) || 0); editSettings(s => { s[t.dataset.k] = v; }); updateBudgetSummary(); return; }
+    if (t.dataset.income) {
+      const id = t.dataset.income;
+      editSettings(s => {
+        const i = s.incomes.find(x => x.id === id);
+        if (!i) return;
+        if (t.dataset.f === 'name') i.name = t.value.slice(0, 40);
+        else if (t.dataset.f === 'day') { const d = parseInt(t.value, 10); i.day = d >= 1 && d <= 31 ? d : 0; }
+        else i.amount = Math.max(0, toNumber(t.value) || 0);
+      });
+      updateBudgetSummary(); return;
+    }
     if (t.dataset.fixed) { const id = t.dataset.fixed; editSettings(s => { const f = s.fixed.find(x => x.id === id); if (f) { if (t.dataset.f === 'name') f.name = t.value.slice(0, 40); else f.amount = Math.max(0, toNumber(t.value) || 0); } }); updateBudgetSummary(); return; }
     if (t.dataset.cat) { const id = t.dataset.cat; editSettings(s => { const c = s.cats.find(x => x.id === id); if (c) { if (t.dataset.f === 'name') c.name = t.value.slice(0, 40); else c.budget = Math.max(0, toNumber(t.value) || 0); } }); updateBudgetSummary(); }
   });
@@ -1419,9 +1531,12 @@ function bind() {
   $('#f-notif').addEventListener('input', onPasteInput);
   $('#f-label').addEventListener('input', () => {
     if (!sheet.catTouched && sheet.kind === 'out') { sheet.cat = guessCat($('#f-label').value, cur().settings); renderSheetCats(); }
+    refreshIncGuess();
     checkFixedWarn();
   });
-  $('#f-kind').addEventListener('click', e => { const b = e.target.closest('button[data-kind]'); if (!b) return; sheet.kind = b.dataset.kind; renderSheetKind(); checkFixedWarn(); });
+  $('#f-amount').addEventListener('input', refreshIncGuess);
+  $('#f-kind').addEventListener('click', e => { const b = e.target.closest('button[data-kind]'); if (!b) return; sheet.kind = b.dataset.kind; renderSheetKind(); refreshIncGuess(); checkFixedWarn(); });
+  $('#f-incs').addEventListener('click', e => { const b = e.target.closest('button[data-inc]'); if (!b) return; sheet.inc = b.dataset.inc; sheet.incTouched = true; renderSheetIncs(); });
   $('#f-cats').addEventListener('click', e => { const b = e.target.closest('button[data-cat]'); if (!b) return; sheet.cat = b.dataset.cat; sheet.catTouched = true; renderSheetCats(); });
 
   /* redraw charts on resize / theme change */

@@ -11,8 +11,12 @@ Version en ligne (privée, liée au compte Claude du propriétaire) :
   de dépense comparé au budget, suivi par catégorie, historique sur six mois.
 - **Opérations** : liste des dépenses et revenus par jour, recherche, filtres,
   modification et suppression.
-- **Budgets** : revenu mensuel, épargne visée, charges fixes déduites
+- **Budgets** : revenus en plusieurs versements (par exemple un acompte et un
+  solde, chacun avec son jour de paie), épargne visée, charges fixes déduites
   automatiquement, budget par catégorie avec répartition proposée.
+- Un virement de salaire collé est relié au bon versement (par son nom, les
+  mots « salaire / acompte / paie », ou le montant le plus proche) : le
+  montant réellement reçu remplace le montant prévu pour le mois.
 - **Notifs** : guide pour relier les notifications de paiement du téléphone
   (Raccourcis sur iPhone, MacroDroid sur Android) et testeur de lecture.
 - Lecture du texte d'une notification bancaire : montant, commerçant, date,
