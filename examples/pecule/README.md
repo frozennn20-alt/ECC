@@ -19,6 +19,10 @@ Version en ligne (privée, liée au compte Claude du propriétaire) :
   est reconnu comme de l'épargne, pas comme une dépense, et relié au bon
   compte par son nom ou son montant. La carte « Épargne du mois » montre ce
   qui est versé et ce qui reste à verser.
+- Carte « Ce mois-ci » : charges fixes et épargne à cocher d'un geste
+  (« Marquer payé », « Marquer versé ») dès qu'elles sont parties. Coller la
+  notification d'un prélèvement qui porte le nom d'une charge fixe la marque
+  payée, sans la compter une deuxième fois comme dépense.
 - Un virement de salaire collé est relié au bon versement (par son nom, les
   mots « salaire / acompte / paie », ou le montant le plus proche) : le
   montant réellement reçu remplace le montant prévu pour le mois.

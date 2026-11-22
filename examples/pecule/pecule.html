@@ -94,6 +94,12 @@ button{font:inherit;color:inherit}
 .sav:first-child{border-top:0;padding-top:0}
 .sav-name{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sav .mono{font-size:.88rem;white-space:nowrap}
+.sav button.pill{border:0;cursor:pointer;font:inherit;font-size:.72rem;font-weight:700}
+.sav.done .sav-name{color:var(--muted)}
+.plan-h{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:4px 0 8px}
+.savs + .plan-h{margin-top:16px}
+.btn.mark-btn{padding:6px 10px;font-size:.78rem;border-color:var(--accent);color:var(--accent)}
+.warn-box .btn{margin-left:2px;padding-block:2px}
 .hero .btn{margin-top:14px;background:var(--hero-ink);color:var(--hero);border-color:var(--hero-ink)}
 
 /* cards */
@@ -561,7 +567,7 @@ function cleanTx(id, t, ym) {
   const amount = typeof t.amount === 'number' && Number.isFinite(t.amount) && t.amount > 0 ? t.amount : 0;
   if (!amount) return null;
   const date = typeof t.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.date) ? t.date : `${ym}-01`;
-  return { id, ym, amount, kind: t.kind === 'in' || t.kind === 'save' ? t.kind : 'out', sav: typeof t.sav === 'string' ? t.sav.slice(0, 40) : '', label: typeof t.label === 'string' ? t.label.slice(0, 60) : '', cat: typeof t.cat === 'string' ? t.cat : 'autre', date, src: t.src === 'notif' ? 'notif' : 'manuel', created: typeof t.created === 'number' ? t.created : 0, inc: typeof t.inc === 'string' ? t.inc.slice(0, 40) : '' };
+  return { id, ym, amount, kind: ['in', 'save', 'fixed'].includes(t.kind) ? t.kind : 'out', sav: typeof t.sav === 'string' ? t.sav.slice(0, 40) : '', fix: typeof t.fix === 'string' ? t.fix.slice(0, 40) : '', label: typeof t.label === 'string' ? t.label.slice(0, 60) : '', cat: typeof t.cat === 'string' ? t.cat : 'autre', date, src: t.src === 'notif' ? 'notif' : 'manuel', created: typeof t.created === 'number' ? t.created : 0, inc: typeof t.inc === 'string' ? t.inc.slice(0, 40) : '' };
 }
 
 const real = { settings: defaultSettings(), months: {}, hasSettings: false, hasData: false };
@@ -597,7 +603,15 @@ function stats(ym) {
   });
   const ids = new Set(st.incomes.map(i => i.id));
   const spent = sum(out), extra = sum(inc.filter(t => !ids.has(t.inc)));
-  const fixed = st.fixed.reduce((a, f) => a + f.amount, 0);
+  /* Charges fixes : montant prévu, remplacé par le paiement noté (« Marquer payé »).
+     Un paiement de charge fixe n'est jamais compté en plus comme dépense. */
+  const fixedTx = txs.filter(t => t.kind === 'fixed');
+  const bills = st.fixed.map(f => {
+    const got = fixedTx.filter(t => t.fix === f.id);
+    return { ...f, actual: sum(got), done: got.length > 0, value: got.length ? sum(got) : f.amount, tx: got[0] || null };
+  });
+  const billIds = new Set(st.fixed.map(f => f.id));
+  const fixed = bills.reduce((a, b) => a + b.value, 0) + sum(fixedTx.filter(t => !billIds.has(t.fix)));
   const base = st.incomes.reduce((a, i) => a + i.amount, 0);
   const income = sources.reduce((a, x) => a + x.value, 0) + extra;
   /* Même logique pour l'épargne : montant prévu par compte, remplacé par le
@@ -605,7 +619,7 @@ function stats(ym) {
   const saves = txs.filter(t => t.kind === 'save');
   const pots = st.savings.map(a => {
     const got = saves.filter(t => t.sav === a.id);
-    return { ...a, actual: sum(got), done: got.length > 0, value: got.length ? sum(got) : a.amount };
+    return { ...a, actual: sum(got), done: got.length > 0, value: got.length ? sum(got) : a.amount, tx: got[0] || null };
   });
   const potIds = new Set(st.savings.map(a => a.id));
   const extraSaved = sum(saves.filter(t => !potIds.has(t.sav)));
@@ -618,7 +632,7 @@ function stats(ym) {
   const dayIdx = isCurrent ? today : isPast ? dim : 0;
   const daysLeft = isCurrent ? dim - today + 1 : 0;
   const expected = available * dayIdx / dim;
-  return { txs, out, inc, saves, pots, extraSaved, saving, plannedSaving, spent, extra, fixed, income, base, sources, available, remaining, byCat, dim, isCurrent, isPast, isFuture, today, dayIdx, daysLeft, expected, perDay: daysLeft > 0 ? remaining / daysLeft : null, delta: spent - expected };
+  return { txs, out, inc, saves, pots, bills, fixedTx, extraSaved, saving, plannedSaving, spent, extra, fixed, income, base, sources, available, remaining, byCat, dim, isCurrent, isPast, isFuture, today, dayIdx, daysLeft, expected, perDay: daysLeft > 0 ? remaining / daysLeft : null, delta: spent - expected };
 }
 
 /* ---------- storage ---------- */
@@ -755,10 +769,13 @@ function makeDemo() {
     const ym = ymShift(curYM(), -k);
     const last = k === 0 ? now.getDate() : daysIn(ym);
     const tx = {};
-    const add = (label, cat, amount, day, kind = 'out', src, inc = '', sav = '') => {
+    const add = (label, cat, amount, day, kind = 'out', src, inc = '', sav = '', fix = '') => {
       const id = 't' + ym.replace('-', '') + Object.keys(tx).length;
-      tx[id] = { amount: round2(amount), kind, label, cat, date: `${ym}-${pad(Math.min(day, last))}`, src: src || (rnd() < 0.65 ? 'notif' : 'manuel'), created: day * 1000 + Object.keys(tx).length, inc, sav };
+      tx[id] = { amount: round2(amount), kind, label, cat, date: `${ym}-${pad(Math.min(day, last))}`, src: src || (rnd() < 0.65 ? 'notif' : 'manuel'), created: day * 1000 + Object.keys(tx).length, inc, sav, fix };
     };
+    if (last >= 5) add('Loyer', 'fixe', 720, 5, 'fixed', 'notif', '', '', 'f1');
+    if (last >= 10) add('Forfait mobile', 'fixe', 15, 10, 'fixed', 'notif', '', '', 'f2');
+    if (k > 0) add('Assurance habitation', 'fixe', 28, 12, 'fixed', 'manuel', '', '', 'f3');
     if (last >= 16) add('Livret A', 'epargne', 150, 16, 'save', 'notif', '', 's1');
     if (k > 0) add('Assurance vie', 'epargne', 100, 28, 'save', 'manuel', '', 's2');
     if (last >= 15) add('Acompte salaire', 'revenu', 600, 15, 'in', 'notif', 'i1');
@@ -868,24 +885,37 @@ function paydaysHTML(s) {
   return `<div class="paydays" aria-label="Versements du mois">${chips.join('')}</div>`;
 }
 
-function savingsHTML(s) {
-  if (!s.pots.length && !s.extraSaved) return '';
-  const rows = s.pots.map(p => {
-    let pill;
-    if (p.done) pill = '<span class="pill good">versé</span>';
-    else if (s.isFuture) pill = '<span class="pill">prévu</span>';
-    else if (s.isPast) pill = '<span class="pill">non noté</span>';
-    else pill = '<span class="pill warn">à verser</span>';
-    const diff = p.done && Math.abs(p.actual - p.amount) >= 1 ? ` <span class="muted">/ ${eur0(p.amount)}</span>` : '';
-    return `<li class="sav"><span class="sav-name">${esc(p.name || 'Épargne')}</span><span class="mono">${eur0(p.value)}${diff}</span>${pill}</li>`;
-  });
-  if (s.extraSaved) rows.push(`<li class="sav"><span class="sav-name">Autre épargne</span><span class="mono">${eur0(s.extraSaved)}</span><span class="pill good">versé</span></li>`);
+/* « Ce mois-ci » : charges fixes et épargne à cocher dès qu'elles sont parties. */
+function planRow(item, type, s) {
+  const doneWord = type === 'fixed' ? 'payé' : 'versé';
+  const name = item.name || (type === 'fixed' ? 'Charge fixe' : 'Épargne');
+  let action;
+  if (item.done) action = `<button class="pill good" type="button" data-tx="${esc(item.tx.id)}" data-ym="${esc(item.tx.ym)}" aria-label="${esc(name)} : ${doneWord}, modifier ou annuler">✓ ${doneWord}</button>`;
+  else if (s.isFuture) action = '<span class="pill">prévu</span>';
+  else action = `<button class="btn small mark-btn" type="button" data-act="mark" data-type="${type}" data-id="${esc(item.id)}">Marquer ${doneWord}</button>`;
+  const diff = item.done && Math.abs(item.actual - item.amount) >= 1 ? ` <span class="muted">/ ${eur0(item.amount)}</span>` : '';
+  return `<li class="sav${item.done ? ' done' : ''}"><span class="sav-name">${esc(name)}</span><span class="mono">${eur0(item.value)}${diff}</span>${action}</li>`;
+}
+
+function planHTML(s) {
+  const bills = s.bills.filter(b => b.amount > 0 || b.done);
+  const pots = s.pots.filter(p => p.amount > 0 || p.done);
+  if (!bills.length && !pots.length && !s.extraSaved) return '';
+  const all = bills.concat(pots);
+  const doneCount = all.filter(x => x.done).length;
+  let body = '';
+  if (bills.length) body += `<div class="plan-h">Charges fixes</div><ul class="savs">${bills.map(b => planRow(b, 'fixed', s)).join('')}</ul>`;
+  if (pots.length || s.extraSaved) {
+    const extra = s.extraSaved ? `<li class="sav done"><span class="sav-name">Autre épargne</span><span class="mono">${eur0(s.extraSaved)}</span><span class="pill good">✓ versé</span></li>` : '';
+    body += `<div class="plan-h">Épargne</div><ul class="savs">${pots.map(p => planRow(p, 'save', s)).join('')}${extra}</ul>`;
+  }
   const yearly = s.plannedSaving * 12;
-  const pct = s.income > 0 ? Math.round(s.saving / s.income * 100) : null;
-  return `<section class="card"><h2>Épargne du mois <small>${pct !== null ? `${pct} % de tes revenus` : ''}</small></h2>
-    <ul class="savs">${rows.join('')}</ul>
-    <div class="sum-line" style="margin-top:12px"><span class="muted">Total mis de côté</span><b>${eur0(s.saving)}</b></div>
-    ${yearly ? `<p class="foot-note">À ce rythme : ${eur0(yearly)} de côté en un an. Quand tu fais le virement, colle sa notification ou choisis « Épargne » avec le bouton <b>+</b> : il compte comme épargne, pas comme dépense.</p>` : ''}
+  const pct = s.income > 0 && s.saving > 0 ? Math.round(s.saving / s.income * 100) : null;
+  const notes = [];
+  if (!s.isFuture && doneCount < all.length) notes.push('Dès qu’un prélèvement ou un virement est parti, touche « Marquer payé » ou « Marquer versé ». Coller sa notification fait la même chose.');
+  if (yearly) notes.push(`Épargne : ${pct !== null ? pct + ' % de tes revenus, ' : ''}soit ${eur0(yearly)} de côté en un an.`);
+  return `<section class="card"><h2>Ce mois-ci <small>${all.length ? `${doneCount} sur ${all.length} réglé${doneCount > 1 ? 's' : ''}` : ''}</small></h2>
+    ${body}${notes.length ? `<p class="foot-note">${esc(notes.join(' '))}</p>` : ''}
   </section>`;
 }
 
@@ -915,15 +945,16 @@ function catsHTML(s) {
 }
 
 function txRow(t, st) {
-  const isIn = t.kind === 'in', isSave = t.kind === 'save';
-  const c = isIn ? { name: 'Revenu', color: 3 } : isSave ? { name: 'Épargne', color: 1 } : catOf(t.cat, st);
+  const isIn = t.kind === 'in', isSave = t.kind === 'save', isFix = t.kind === 'fixed';
+  const c = isIn ? { name: 'Revenu', color: 3 } : isSave ? { name: 'Épargne', color: 1 } : isFix ? { name: 'Charge fixe', color: 9 } : catOf(t.cat, st);
   const initial = (t.label || c.name || '?').trim().charAt(0).toUpperCase() || '?';
   let meta;
   if (isIn) { const source = t.inc ? st.incomes.find(i => i.id === t.inc) : null; meta = [source ? `Revenu · ${source.name || 'versement prévu'}` : 'Revenu en plus']; }
   else if (isSave) { const pot = t.sav ? st.savings.find(a => a.id === t.sav) : null; meta = [`Épargne · ${pot ? pot.name || 'compte' : 'autre compte'}`]; }
+  else if (isFix) { const bill = t.fix ? st.fixed.find(f => f.id === t.fix) : null; meta = [`Charge fixe · ${bill ? bill.name || 'sans nom' : 'supprimée'}`]; }
   else meta = [catName(c)];
   if (t.src === 'notif') meta.push('notif');
-  const fallback = isIn ? 'Revenu' : isSave ? 'Épargne' : 'Dépense';
+  const fallback = isIn ? 'Revenu' : isSave ? 'Épargne' : isFix ? 'Charge fixe' : 'Dépense';
   return `<button class="tx" type="button" data-tx="${esc(t.id)}" data-ym="${esc(t.ym)}" style="--c:var(--c${c.color})"><span class="tx-ico" aria-hidden="true">${esc(initial)}</span><span class="tx-main"><span class="tx-label">${esc(t.label || fallback)}</span><span class="tx-meta">${esc(meta.join(' · '))}</span></span><span class="tx-amt mono${isIn ? ' in' : isSave ? ' save' : ''}">${isIn ? '+' : isSave ? '' : '−'}${eur(t.amount)}</span></button>`;
 }
 
@@ -948,7 +979,7 @@ function renderMois() {
   if (!S.demo && !real.hasData) parts.push(welcomeHTML());
   parts.push(heroHTML(s));
   if (s.base > 0 && s.available > 0 && !s.isFuture) parts.push(`<section class="card"><h2>Rythme du mois <small>dépenses cumulées</small></h2><div class="chart" id="pace-chart"></div><div class="legend"><span><i></i>Tes dépenses</span><span><i class="dash"></i>Rythme qui tient le budget</span></div></section>`);
-  parts.push(savingsHTML(s));
+  parts.push(planHTML(s));
   parts.push(catsHTML(s));
   parts.push(recentHTML(s));
   if (historyData().filter(h => h.spent > 0).length >= 2) parts.push(`<section class="card"><h2>Six derniers mois <small>dépenses variables</small></h2><div class="chart" id="hist-chart"></div></section>`);
@@ -971,6 +1002,7 @@ function renderOps() {
     .concat(st.cats.filter(c => s.byCat[c.id]).map(c => `<button class="chip" type="button" data-filter="${esc(c.id)}" aria-pressed="${S.filter === c.id}" style="--c:var(--c${c.color})"><i></i>${esc(catName(c))}</button>`));
   if (s.inc.length) chips.push(`<button class="chip" type="button" data-filter="in" aria-pressed="${S.filter === 'in'}" style="--c:var(--c3)"><i></i>Revenus</button>`);
   if (s.saves.length) chips.push(`<button class="chip" type="button" data-filter="save" aria-pressed="${S.filter === 'save'}" style="--c:var(--c1)"><i></i>Épargne</button>`);
+  if (s.fixedTx.length) chips.push(`<button class="chip" type="button" data-filter="fixed" aria-pressed="${S.filter === 'fixed'}" style="--c:var(--c9)"><i></i>Charges fixes</button>`);
   el.innerHTML = `${monthNav()}
     <div class="totals"><span>Dépenses <b>${eur(s.spent)}</b></span>${s.inc.length ? `<span>Revenus reçus <b>+${eur(sum(s.inc))}</b></span>` : ''}${s.saves.length ? `<span>Mis de côté <b>${eur(sum(s.saves))}</b></span>` : ''}<span>${plural(s.txs.length, 'opération', 'opérations')}</span></div>
     <div class="search"><input id="ops-q" type="search" placeholder="Chercher un commerçant…" value="${esc(S.q)}" autocomplete="off" aria-label="Chercher une opération"></div>
@@ -985,7 +1017,7 @@ function renderOpsList() {
   const s = stats(S.ym);
   const q = normKey(S.q);
   let list = s.txs.slice().sort(byNewest);
-  if (S.filter === 'in' || S.filter === 'save') list = list.filter(t => t.kind === S.filter);
+  if (S.filter === 'in' || S.filter === 'save' || S.filter === 'fixed') list = list.filter(t => t.kind === S.filter);
   else if (S.filter !== 'all') list = list.filter(t => t.kind === 'out' && catOf(t.cat, st).id === S.filter);
   if (q) list = list.filter(t => normKey(t.label + ' ' + catOf(t.cat, st).name).includes(q));
   if (!list.length) { box.innerHTML = `<p class="empty">${s.txs.length ? 'Aucune opération ne correspond.' : 'Aucune opération ce mois-ci. Touche <b>+</b> pour en ajouter une.'}</p>`; return; }
@@ -996,8 +1028,8 @@ function renderOpsList() {
     if (t.date !== day) { day = t.date; html += `<div class="day-h"><span>${esc(dayLabel(day))}</span><span class="mono">${dayTotals[day] ? '−' + eur(dayTotals[day]) : ''}</span></div>`; }
     html += txRow(t, st);
   }
-  const fx = st.fixed.filter(f => f.amount > 0);
-  const fixedNote = fx.length && S.filter === 'all' && !q ? `<p class="foot-note">Charges fixes déjà déduites chaque mois : ${esc(fx.map(f => `${f.name || 'Sans nom'} ${eur0(f.amount)}`).join(', '))}.</p>` : '';
+  const fx = s.bills.filter(b => b.amount > 0 && !b.done);
+  const fixedNote = fx.length && S.filter === 'all' && !q ? `<p class="foot-note">Charges fixes pas encore marquées payées (déjà déduites de ton budget) : ${esc(fx.map(f => `${f.name || 'Sans nom'} ${eur0(f.amount)}`).join(', '))}.</p>` : '';
   box.innerHTML = `<div class="txs">${html}</div>${fixedNote}`;
 }
 
@@ -1029,7 +1061,7 @@ function renderBudgets(fromSnap) {
       <p class="hint" id="b-savehint" style="margin-top:8px"></p>
     </section>
     <section class="card"><h2>Charges fixes <small>prélevées chaque mois</small></h2>
-      <p class="hint">Loyer, forfait, assurances, crédit… Elles sont déduites automatiquement chaque mois : inutile de les ajouter comme dépenses.</p>
+      <p class="hint">Loyer, voiture, forfait, assurances, crédit… Elles sont déduites de ton budget dès le début du mois. Quand l’une est prélevée, marque-la payée dans l’écran <b>Mois</b>.</p>
       <div class="edit-list" style="margin-top:10px">${fixedRows || '<p class="muted" style="margin:0">Aucune charge fixe pour l’instant.</p>'}</div>
       <button class="btn small" type="button" data-act="add-fixed">+ Ajouter une charge</button>
       <div class="sum-line"><span class="muted">Total des charges fixes</span><b id="b-fixedsum"></b></div>
@@ -1250,7 +1282,7 @@ function drawHistory(s) {
 }
 
 /* ---------- sheet ---------- */
-const sheet = { editing: null, kind: 'out', cat: 'autre', catTouched: false, inc: '', incTouched: false, sav: '', savTouched: false, src: 'manuel', delArmed: false };
+const sheet = { editing: null, kind: 'out', cat: 'autre', catTouched: false, inc: '', incTouched: false, sav: '', savTouched: false, fix: '', src: 'manuel', delArmed: false };
 
 /* Relie un virement d'épargne à un compte : par son nom, puis par le montant
    le plus proche, puis au seul compte pas encore alimenté ce mois-ci. */
@@ -1340,7 +1372,9 @@ function openSheet(opts = {}) {
   sheet.incTouched = !!t;
   sheet.inc = t ? (t.inc || '') : sheet.kind === 'in' ? guessInc(pre.label || '', pre.date, pre.amount || 0) : '';
   sheet.savTouched = !!t;
-  sheet.sav = t ? (t.sav || '') : sheet.kind === 'save' ? guessSav(pre.label || '', pre.date, pre.amount || 0) : '';
+  sheet.sav = t ? (t.sav || '') : pre.sav || (sheet.kind === 'save' ? guessSav(pre.label || '', pre.date, pre.amount || 0) : '');
+  if (!t && pre.sav) sheet.savTouched = true;
+  sheet.fix = t ? (t.fix || '') : (pre.fix || '');
   $('#sheet-title').textContent = t ? 'Modifier l’opération' : 'Nouvelle opération';
   const del = $('#f-delete'); del.hidden = !t; del.classList.remove('confirm'); del.textContent = 'Supprimer';
   $('#paste-box').hidden = !!t;
@@ -1362,13 +1396,23 @@ function renderSheetCats() {
   const st = cur().settings;
   $('#f-cats').innerHTML = st.cats.map(c => `<button class="chip" type="button" data-cat="${esc(c.id)}" aria-pressed="${c.id === sheet.cat}" style="--c:var(--c${c.color})"><i></i>${esc(catName(c))}</button>`).join('');
 }
+function matchFixed(label) {
+  const lbl = normKey(label);
+  if (lbl.length < 3) return null;
+  return cur().settings.fixed.find(f => { const n = normKey(f.name); return n.length >= 3 && (lbl.includes(n) || n.includes(lbl)); }) || null;
+}
 function checkFixedWarn() {
   const box = $('#f-fixedwarn');
-  const lbl = normKey($('#f-label').value);
   const st = cur().settings;
-  const hit = sheet.kind === 'out' && lbl.length >= 3 ? st.fixed.find(f => { const n = normKey(f.name); return n.length >= 3 && (lbl.includes(n) || n.includes(lbl)); }) : null;
+  if (sheet.kind === 'fixed') {
+    const f = st.fixed.find(x => x.id === sheet.fix);
+    box.hidden = false;
+    box.innerHTML = `Paiement de ta charge fixe <b>« ${esc(f ? f.name || 'sans nom' : 'supprimée')} »</b> : elle sera marquée payée ce mois-ci, sans être comptée deux fois. <button class="btn ghost small" type="button" data-fixact="out">C’est une autre dépense</button>`;
+    return;
+  }
+  const hit = sheet.kind === 'out' ? matchFixed($('#f-label').value) : null;
   box.hidden = !hit;
-  if (hit) box.textContent = `Ça ressemble à ta charge fixe « ${hit.name} », déjà déduite chaque mois. Ne l’ajoute que s’il s’agit d’une autre dépense.`;
+  if (hit) box.innerHTML = `Ça ressemble à ta charge fixe <b>« ${esc(hit.name)} »</b>, déjà déduite de ton budget. <button class="btn ghost small" type="button" data-fixact="${esc(hit.id)}">Oui, c’est ce paiement</button>`;
 }
 
 function onPasteInput() {
@@ -1382,6 +1426,7 @@ function onPasteInput() {
   if (p.label) $('#f-label').value = p.label;
   $('#f-date').value = p.date;
   sheet.kind = p.kind;
+  if (p.kind === 'out') { const f = matchFixed(p.label); if (f) { sheet.kind = 'fixed'; sheet.fix = f.id; } }
   if (!sheet.catTouched) sheet.cat = guessCat(p.label, st);
   if (p.kind === 'in' && !sheet.incTouched) sheet.inc = guessInc(p.label, p.date, p.amount || 0);
   if (p.kind === 'save' && !sheet.savTouched) sheet.sav = guessSav(p.label, p.date, p.amount || 0);
@@ -1389,7 +1434,8 @@ function onPasteInput() {
   out.hidden = false;
   const srcName = (st.incomes.find(i => i.id === sheet.inc) || {}).name;
   const potName = (st.savings.find(a => a.id === sheet.sav) || {}).name;
-  const what = p.kind === 'in' ? ` · revenu${srcName ? ' (' + srcName + ')' : ''}` : p.kind === 'save' ? ` · épargne${potName ? ' (' + potName + ')' : ''}` : ' · ' + catName(catOf(sheet.cat, st));
+  const billName = (st.fixed.find(f => f.id === sheet.fix) || {}).name;
+  const what = sheet.kind === 'fixed' ? ` · charge fixe (${billName || 'payée'})` : p.kind === 'in' ?` · revenu${srcName ? ' (' + srcName + ')' : ''}` : p.kind === 'save' ? ` · épargne${potName ? ' (' + potName + ')' : ''}` : ' · ' + catName(catOf(sheet.cat, st));
   if (p.amount) { out.className = 'parsed'; out.textContent = `Lu : ${eur(p.amount)}${p.label ? ' · ' + p.label : ''}${what}`; }
   else { out.className = 'parsed miss'; out.textContent = 'Pas de montant trouvé dans ce texte. Saisis-le ci-dessous.'; }
 }
@@ -1413,22 +1459,25 @@ async function submitSheet(e) {
   const amount = round2(Math.abs(toNumber($('#f-amount').value)));
   if (!(amount > 0)) { err.textContent = 'Indique un montant supérieur à 0.'; err.hidden = false; $('#f-amount').focus(); return; }
   const date = /^\d{4}-\d{2}-\d{2}$/.test($('#f-date').value) ? $('#f-date').value : todayISO();
-  const kind = sheet.kind;
   const st = cur().settings;
+  const fixId = sheet.kind === 'fixed' && st.fixed.some(f => f.id === sheet.fix) ? sheet.fix : '';
+  const kind = sheet.kind === 'fixed' && !fixId ? 'out' : sheet.kind;
+  const bill = st.fixed.find(f => f.id === fixId);
   const savId = kind === 'save' && st.savings.some(a => a.id === sheet.sav) ? sheet.sav : '';
   const pot = st.savings.find(a => a.id === savId);
-  const label = ($('#f-label').value.trim() || (kind === 'in' ? 'Revenu' : kind === 'save' ? (pot && pot.name) || 'Épargne' : 'Dépense')).slice(0, 60);
-  const cat = kind === 'in' ? 'revenu' : kind === 'save' ? 'epargne' : catOf(sheet.cat, st).id;
+  const label = ($('#f-label').value.trim() || (kind === 'in' ? 'Revenu' : kind === 'save' ? (pot && pot.name) || 'Épargne' : kind === 'fixed' ? (bill && bill.name) || 'Charge fixe' : 'Dépense')).slice(0, 60);
+  const cat = kind === 'in' ? 'revenu' : kind === 'save' ? 'epargne' : kind === 'fixed' ? 'fixe' : catOf(sheet.cat, st).id;
   const old = sheet.editing;
   const id = old ? old.id : rid('t');
   const ym = date.slice(0, 7);
   const incId = kind === 'in' && st.incomes.some(i => i.id === sheet.inc) ? sheet.inc : '';
-  const tx = { amount, kind, label, cat, date, src: sheet.src, created: old && old.created ? old.created : Date.now(), inc: incId, sav: savId };
+  const tx = { amount, kind, label, cat, date, src: sheet.src, created: old && old.created ? old.created : Date.now(), inc: incId, sav: savId, fix: kind === 'fixed' ? fixId : '' };
 
   const incSrc = st.incomes.find(i => i.id === incId);
   let msg = old ? 'Opération modifiée'
     : kind === 'in' ? (incSrc ? `${incSrc.name || 'Versement'} de ${eur(amount)} reçu : budget du mois mis à jour` : `Revenu de ${eur(amount)} ajouté`)
     : kind === 'save' ? `${eur(amount)} mis de côté${pot ? ' sur « ' + (pot.name || 'ton compte') + ' »' : ''}`
+    : kind === 'fixed' ? `« ${(bill && bill.name) || 'Charge fixe'} » marquée payée (${eur(amount)})`
     : `Dépense de ${eur(amount)} ajoutée`;
   let tone = '';
   if (kind === 'out') {
@@ -1488,8 +1537,9 @@ async function exportCSV() {
   if (!all.length) { toast('Aucune opération à exporter pour l’instant.'); return; }
   const safe = v => { let s = String(v); if (/^[=+\-@]/.test(s)) s = "'" + s; return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const rows = [['Date', 'Type', 'Libellé', 'Catégorie', 'Montant (€)', 'Source'].join(';')];
-  const typeOf = t => (t.kind === 'in' ? 'Revenu' : t.kind === 'save' ? 'Épargne' : 'Dépense');
+  const typeOf = t => (t.kind === 'in' ? 'Revenu' : t.kind === 'save' ? 'Épargne' : t.kind === 'fixed' ? 'Charge fixe' : 'Dépense');
   const groupOf = t => {
+    if (t.kind === 'fixed') return (st.fixed.find(f => f.id === t.fix) || { name: 'Charge fixe' }).name || 'Charge fixe';
     if (t.kind === 'in') return (st.incomes.find(i => i.id === t.inc) || { name: 'Revenu en plus' }).name || 'Revenu';
     if (t.kind === 'save') return (st.savings.find(a => a.id === t.sav) || { name: 'Autre épargne' }).name || 'Épargne';
     return catName(catOf(t.cat, st));
@@ -1507,7 +1557,7 @@ async function askAdvice() {
   const top = Object.entries(merchants).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([nom, total]) => ({ nom, total: round2(total) }));
   const data = {
     mois: ymLabel(S.ym), avancement: s.isCurrent ? `jour ${s.dayIdx} sur ${s.dim}` : s.isPast ? 'mois terminé' : 'mois à venir',
-    versements: s.sources.map(x => ({ nom: x.name, prevu: x.amount, recu: x.received ? round2(x.actual) : null, jour: x.day || null })), revenus_en_plus: round2(s.extra), charges_fixes: round2(s.fixed), epargne: s.pots.map(p => ({ compte: p.name, prevu: p.amount, verse: p.done ? round2(p.actual) : null })), epargne_totale: round2(s.saving),
+    versements: s.sources.map(x => ({ nom: x.name, prevu: x.amount, recu: x.received ? round2(x.actual) : null, jour: x.day || null })), revenus_en_plus: round2(s.extra), charges_fixes: s.bills.map(b => ({ nom: b.name, prevu: b.amount, paye: b.done ? round2(b.actual) : null })), total_charges_fixes: round2(s.fixed), epargne: s.pots.map(p => ({ compte: p.name, prevu: p.amount, verse: p.done ? round2(p.actual) : null })), epargne_totale: round2(s.saving),
     disponible_pour_depenses: round2(s.available), depense: round2(s.spent), reste: round2(s.remaining),
     categories: st.cats.map(c => ({ nom: c.name, budget: c.budget, depense: round2(s.byCat[c.id] || 0) })).filter(c => c.budget || c.depense),
     principaux_commercants: top,
@@ -1605,6 +1655,22 @@ function bind() {
       editSettings(s => { s.incomes.push({ id: a, name: 'Acompte', amount: 0, day: 15 }, { id: b, name: 'Solde', amount: 0, day: 30 }); });
       renderBudgets(); const n = document.getElementById('in-a-' + a); if (n) n.focus();
     }
+    else if (act === 'mark') {
+      const type = t.dataset.type, id = t.dataset.id;
+      const st = cur().settings;
+      const item = (type === 'fixed' ? st.fixed : st.savings).find(x => x.id === id);
+      if (!item) return;
+      const kind = type === 'fixed' ? 'fixed' : 'save';
+      const ym = S.ym;
+      const date = ym === curYM() ? todayISO() : `${ym}-${pad(daysIn(ym))}`;
+      const name = item.name || (kind === 'fixed' ? 'Charge fixe' : 'Épargne');
+      if (!(item.amount > 0)) { openSheet({ prefill: { kind, label: name, date, fix: kind === 'fixed' ? id : '', sav: kind === 'save' ? id : '' } }); return; }
+      t.disabled = true;
+      const tx = { amount: item.amount, kind, label: name, cat: kind === 'fixed' ? 'fixe' : 'epargne', date, src: 'manuel', created: Date.now(), inc: '', sav: kind === 'save' ? id : '', fix: kind === 'fixed' ? id : '' };
+      putTx(ym, rid('t'), tx)
+        .then(() => toast(`« ${name} » marqué ${kind === 'fixed' ? 'payé' : 'versé'} : ${eur(item.amount)}. Touche-le pour changer le montant ou annuler.`))
+        .catch(ex => { t.disabled = false; toast(writeError(ex), 'bad'); });
+    }
     else if (act === 'add-sav') { const id = rid('s'); editSettings(s => { s.savings.push({ id, name: '', amount: 0 }); }); renderBudgets(); const n = document.getElementById('sv-n-' + id); if (n) n.focus(); }
     else if (act === 'del-sav') { editSettings(s => { s.savings = s.savings.filter(a => a.id !== t.dataset.id); }); renderBudgets(); }
     else if (act === 'add-income') { const id = rid('i'); editSettings(s => { s.incomes.push({ id, name: '', amount: 0, day: 0 }); }); renderBudgets(); const n = document.getElementById('in-n-' + id); if (n) n.focus(); }
@@ -1663,6 +1729,11 @@ function bind() {
   });
   $('#f-amount').addEventListener('input', () => { refreshIncGuess(); refreshSavGuess(); });
   $('#f-kind').addEventListener('click', e => { const b = e.target.closest('button[data-kind]'); if (!b) return; sheet.kind = b.dataset.kind; renderSheetKind(); refreshIncGuess(); refreshSavGuess(); checkFixedWarn(); });
+  $('#f-fixedwarn').addEventListener('click', e => {
+    const b = e.target.closest('[data-fixact]'); if (!b) return;
+    if (b.dataset.fixact === 'out') { sheet.kind = 'out'; sheet.fix = ''; } else { sheet.kind = 'fixed'; sheet.fix = b.dataset.fixact; }
+    renderSheetKind(); checkFixedWarn();
+  });
   $('#f-savs').addEventListener('click', e => { const b = e.target.closest('button[data-sav]'); if (!b) return; sheet.sav = b.dataset.sav; sheet.savTouched = true; renderSheetSavs(); });
   $('#f-incs').addEventListener('click', e => { const b = e.target.closest('button[data-inc]'); if (!b) return; sheet.inc = b.dataset.inc; sheet.incTouched = true; renderSheetIncs(); });
   $('#f-cats').addEventListener('click', e => { const b = e.target.closest('button[data-cat]'); if (!b) return; sheet.cat = b.dataset.cat; sheet.catTouched = true; renderSheetCats(); });
