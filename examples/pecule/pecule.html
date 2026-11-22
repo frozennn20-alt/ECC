@@ -9,7 +9,7 @@
   --hero:#0C3A31; --hero-ink:#EEF7F3; --hero-muted:#A9C9BF; --hero-track:rgba(238,247,243,.2); --hero-bad:#FFB3A8; --hero-chip:rgba(238,247,243,.13);
   --good:#1D8352; --warn:#9A5B00; --bad:#BF3A30;
   --good-soft:#DCF0E4; --warn-soft:#FAEBD3; --bad-soft:#F8DFDB;
-  --c1:#2E68AC; --c2:#D06F22; --c3:#2A8468; --c4:#BF433B; --c5:#A9831A; --c6:#7650AA; --c7:#6B777D; --c8:#BB4A82; --c9:#86583A;
+  --c1:#2E68AC; --c2:#D06F22; --c3:#2A8468; --c4:#BF433B; --c5:#A9831A; --c6:#7650AA; --c7:#6B777D; --c8:#BB4A82; --c9:#86583A; --c10:#4655C8;
   --scrim:rgba(6,20,16,.48);
   --shadow:0 12px 30px -14px rgba(12,58,49,.45);
   --f-display:"Archivo","Arial Narrow",system-ui,sans-serif;
@@ -24,7 +24,7 @@
     --hero:#0F4237; --hero-ink:#ECF7F2; --hero-muted:#9FC6BA; --hero-track:rgba(236,247,242,.17);
     --good:#4CC489; --warn:#E8A33C; --bad:#F2766B;
     --good-soft:#123826; --warn-soft:#3A2A10; --bad-soft:#3E1B18;
-    --c1:#6EA6E6; --c2:#EE9E5A; --c3:#56C6A0; --c4:#EE7A70; --c5:#DDBB4C; --c6:#B08FE4; --c7:#A0ADB3; --c8:#E888B7; --c9:#C99068;
+    --c1:#6EA6E6; --c2:#EE9E5A; --c3:#56C6A0; --c4:#EE7A70; --c5:#DDBB4C; --c6:#B08FE4; --c7:#A0ADB3; --c8:#E888B7; --c9:#C99068; --c10:#97A2FF;
     --scrim:rgba(0,0,0,.6); --shadow:0 12px 30px -14px rgba(0,0,0,.7);
     color-scheme:dark;
   }
@@ -35,7 +35,7 @@
   --hero:#0F4237; --hero-ink:#ECF7F2; --hero-muted:#9FC6BA; --hero-track:rgba(236,247,242,.17);
   --good:#4CC489; --warn:#E8A33C; --bad:#F2766B;
   --good-soft:#123826; --warn-soft:#3A2A10; --bad-soft:#3E1B18;
-  --c1:#6EA6E6; --c2:#EE9E5A; --c3:#56C6A0; --c4:#EE7A70; --c5:#DDBB4C; --c6:#B08FE4; --c7:#A0ADB3; --c8:#E888B7; --c9:#C99068;
+  --c1:#6EA6E6; --c2:#EE9E5A; --c3:#56C6A0; --c4:#EE7A70; --c5:#DDBB4C; --c6:#B08FE4; --c7:#A0ADB3; --c8:#E888B7; --c9:#C99068; --c10:#97A2FF;
   --scrim:rgba(0,0,0,.6); --shadow:0 12px 30px -14px rgba(0,0,0,.7);
   color-scheme:dark;
 }
@@ -175,9 +175,11 @@ button{font:inherit;color:inherit}
 .ch-bar{fill:var(--accent)}
 .ch-bar.over{fill:var(--bad)}
 .ch-bar.cur{opacity:.55}
+.ch-bar.oneoff{fill:var(--c10)}
 .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:.78rem;color:var(--muted)}
 .legend i{display:inline-block;width:16px;height:0;border-top:2.4px solid var(--accent);vertical-align:middle;margin-right:6px}
 .legend i.dash{border-top:1.5px dashed var(--muted)}
+.legend i.sq{width:10px;height:10px;border:0;border-radius:3px;background:var(--c10);vertical-align:-1px}
 
 /* forms */
 .field{display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -496,6 +498,7 @@ function parseNotif(raw, now = new Date()) {
 }
 
 const KEYWORDS = [
+  ['exceptionnel', ['taxe', 'impot', 'amende', 'contravention', 'antai', 'dgfip', 'tresor public', 'finances publiques', 'spf finances', 'notaire', 'mise en circulation', 'carte grise', 'ants', 'huissier']],
   ['abonnements', ['netflix', 'spotify', 'deezer', 'disney', 'amazon prime', 'prime video', 'canal', 'apple com', 'apple bill', 'itunes', 'icloud', 'youtube', 'google one', 'google storage', 'free mobile', 'free telecom', 'freebox', 'sfr', 'orange', 'bouygues', 'sosh', 'red by sfr', 'b you', 'basic fit', 'fitness park', 'keepcool', 'neoness', 'chatgpt', 'openai', 'anthropic', 'claude ai', 'adobe', 'microsoft', 'office 365', 'game pass', 'playstation plus', 'audible', 'kindle', 'molotov', 'dazn', 'bein', 'crunchyroll', 'twitch', 'patreon', 'mediapart', 'le monde', 'lequipe']],
   ['resto', ['uber eats', 'ubereats', 'deliveroo', 'just eat', 'mcdonald', 'mcdo', 'burger king', 'kfc', 'starbucks', 'subway', 'five guys', 'domino', 'pizza', 'sushi', 'tacos', 'restaurant', 'resto', 'brasserie', 'bistro', 'bistrot', 'cafe', 'bar', 'kebab', 'burger', 'columbus', 'pret a manger', 'exki', 'pomme de pain', 'brioche doree', 'cojean', 'big fernand', 'buffalo grill', 'hippopotamus', 'flunch', 'crous', 'creperie']],
   ['courses', ['carrefour', 'leclerc', 'auchan', 'lidl', 'aldi', 'intermarche', 'monoprix', 'franprix', 'casino', 'super u', 'hyper u', 'u express', 'systeme u', 'picard', 'biocoop', 'naturalia', 'grand frais', 'netto', 'spar', 'g20', 'cora', 'match', 'la vie claire', 'epicerie', 'boulangerie', 'boucherie', 'primeur', 'supermarche', 'marche', 'paul']],
@@ -535,9 +538,10 @@ const DEFAULT_CATS = [
   { id: 'sante', name: 'Santé', color: 4, share: 0.05 },
   { id: 'maison', name: 'Maison & factures', color: 9, share: 0.08 },
   { id: 'abonnements', name: 'Abonnements', color: 5, share: 0.05 },
+  { id: 'exceptionnel', name: 'Dépenses exceptionnelles', color: 10, share: 0, oneoff: true },
   { id: 'autre', name: 'Autre', color: 7, share: 0.08 },
 ];
-const defaultSettings = () => ({ v: 3, incomes: [], savings: [], fixed: [], cats: DEFAULT_CATS.map(({ id, name, color }) => ({ id, name, color, budget: 0 })), memory: {} });
+const defaultSettings = () => ({ v: 3, incomes: [], savings: [], fixed: [], cats: DEFAULT_CATS.map(({ id, name, color, oneoff }) => ({ id, name, color, budget: 0, ...(oneoff ? { oneoff: true } : {}) })), memory: {} });
 
 function normalizeSettings(raw) {
   const d = defaultSettings();
@@ -545,7 +549,7 @@ function normalizeSettings(raw) {
   const num = v => (typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : 0);
   const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
   const cats = Array.isArray(raw.cats)
-    ? raw.cats.filter(c => c && typeof c.id === 'string' && c.id).map(c => ({ id: str(c.id, 40), name: str(c.name, 40), color: Number.isInteger(c.color) && c.color >= 1 && c.color <= 9 ? c.color : 7, budget: num(c.budget) }))
+    ? raw.cats.filter(c => c && typeof c.id === 'string' && c.id).map(c => ({ id: str(c.id, 40), name: str(c.name, 40), color: Number.isInteger(c.color) && c.color >= 1 && c.color <= 10 ? c.color : 7, budget: num(c.budget), ...(c.oneoff === true ? { oneoff: true } : {}) }))
     : d.cats;
   if (!cats.some(c => c.id === 'autre')) cats.push({ id: 'autre', name: 'Autre', color: 7, budget: 0 });
   const fixed = Array.isArray(raw.fixed) ? raw.fixed.filter(f => f && typeof f === 'object').map(f => ({ id: str(f.id, 40) || rid('f'), name: str(f.name, 40), amount: num(f.amount) })) : [];
@@ -631,8 +635,11 @@ function stats(ym) {
   for (const t of out) { const c = catOf(t.cat, st).id; byCat[c] = (byCat[c] || 0) + t.amount; }
   const dayIdx = isCurrent ? today : isPast ? dim : 0;
   const daysLeft = isCurrent ? dim - today + 1 : 0;
-  const expected = available * dayIdx / dim;
-  return { txs, out, inc, saves, pots, bills, fixedTx, extraSaved, saving, plannedSaving, spent, extra, fixed, income, base, sources, available, remaining, byCat, dim, isCurrent, isPast, isFuture, today, dayIdx, daysLeft, expected, perDay: daysLeft > 0 ? remaining / daysLeft : null, delta: spent - expected };
+  /* Les dépenses ponctuelles réduisent le reste à dépenser mais pas le rythme. */
+  const oneoffIds = new Set(st.cats.filter(c => c.oneoff).map(c => c.id));
+  const oneoff = sum(out.filter(t => oneoffIds.has(catOf(t.cat, st).id)));
+  const expected = (available - oneoff) * dayIdx / dim;
+  return { txs, out, inc, saves, pots, bills, fixedTx, extraSaved, saving, plannedSaving, spent, extra, fixed, income, base, sources, available, remaining, byCat, dim, isCurrent, isPast, isFuture, today, dayIdx, daysLeft, expected, perDay: daysLeft > 0 ? remaining / daysLeft : null, delta: (spent - oneoff) - expected, oneoff, oneoffIds };
 }
 
 /* ---------- storage ---------- */
@@ -753,7 +760,7 @@ function makeDemo() {
   let a = 20261121;
   const rnd = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const budgets = { courses: 320, resto: 140, transport: 110, shopping: 120, loisirs: 100, sante: 40, maison: 90, abonnements: 45, autre: 80 };
-  const settings = { v: 3, incomes: [{ id: 'i1', name: 'Acompte', amount: 600, day: 15 }, { id: 'i2', name: 'Solde', amount: 1500, day: 30 }], savings: [{ id: 's1', name: 'Livret A', amount: 150 }, { id: 's2', name: 'Assurance vie', amount: 100 }], fixed: [{ id: 'f1', name: 'Loyer', amount: 720 }, { id: 'f2', name: 'Forfait mobile', amount: 15 }, { id: 'f3', name: 'Assurance habitation', amount: 28 }], cats: DEFAULT_CATS.map(({ id, name, color }) => ({ id, name, color, budget: budgets[id] })), memory: {} };
+  const settings = { v: 3, incomes: [{ id: 'i1', name: 'Acompte', amount: 600, day: 15 }, { id: 'i2', name: 'Solde', amount: 1500, day: 30 }], savings: [{ id: 's1', name: 'Livret A', amount: 150 }, { id: 's2', name: 'Assurance vie', amount: 100 }], fixed: [{ id: 'f1', name: 'Loyer', amount: 720 }, { id: 'f2', name: 'Forfait mobile', amount: 15 }, { id: 'f3', name: 'Assurance habitation', amount: 28 }], cats: DEFAULT_CATS.map(({ id, name, color, oneoff }) => ({ id, name, color, budget: budgets[id] || 0, ...(oneoff ? { oneoff: true } : {}) })), memory: {} };
   const pool = [
     ['Carrefour City', 'courses', 12, 48, 5], ['Lidl', 'courses', 25, 70, 3], ['Boulangerie Ange', 'courses', 3, 9, 4], ['Monoprix', 'courses', 8, 35, 3],
     ['Starbucks', 'resto', 4, 7, 3], ['Uber Eats', 'resto', 16, 32, 2], ['Le Petit Bistrot', 'resto', 18, 42, 2], ['Pret A Manger', 'resto', 8, 13, 2],
@@ -782,6 +789,7 @@ function makeDemo() {
     if (k > 0) add('Solde salaire', 'revenu', 1460 + Math.round(rnd() * 110), 30, 'in', 'notif', 'i2');
     add('Navigo', 'transport', 86.4, 2); add('Spotify', 'abonnements', 11.12, 5); add('Netflix', 'abonnements', 13.49, 12);
     if (last >= 8) add('EDF', 'maison', 48, 8);
+    if (k === 2) add('Carte grise', 'exceptionnel', 276.76, 9, 'out', 'manuel');
     const n = Math.round(last * (k === 0 ? 0.95 : 0.9 + rnd() * 0.3));
     for (let i = 0; i < n; i++) { const p = bag[Math.floor(rnd() * bag.length)]; add(p[0], p[1], p[2] + rnd() * (p[3] - p[2]), 1 + Math.floor(rnd() * last)); }
     if (k === 0 && last > 6) add('Remboursement Ameli', 'revenu', 23.5, last - 3, 'in', 'notif');
@@ -932,7 +940,7 @@ function catsHTML(s) {
   const items = rows.map(({ c, spent }) => {
     const p = c.budget > 0 ? spent / c.budget * 100 : null;
     let pill = '';
-    if (p === null) pill = '<span class="pill warn">Hors budget</span>';
+    if (p === null) pill = c.oneoff ? '<span class="pill">ponctuel</span>' : '<span class="pill warn">Hors budget</span>';
     else if (p >= 100) pill = `<span class="pill bad">${spent - c.budget < 0.5 ? 'Atteint' : '+' + eur0(spent - c.budget)}</span>`;
     else if (p >= 80) pill = `<span class="pill warn">${Math.round(p)} %</span>`;
     else pill = `<span class="pill">${Math.round(p)} %</span>`;
@@ -967,7 +975,13 @@ function recentHTML(s) {
 
 function historyData() {
   const out = [];
-  for (let k = 5; k >= 0; k--) { const ym = ymShift(S.ym, -k); out.push({ ym, spent: sum(txOf(ym).filter(t => t.kind === 'out')) }); }
+  const st = cur().settings;
+  const ids = new Set(st.cats.filter(c => c.oneoff).map(c => c.id));
+  for (let k = 5; k >= 0; k--) {
+    const ym = ymShift(S.ym, -k);
+    const o = txOf(ym).filter(t => t.kind === 'out');
+    out.push({ ym, spent: sum(o), oneoff: sum(o.filter(t => ids.has(catOf(t.cat, st).id))) });
+  }
   return out;
 }
 
@@ -978,7 +992,7 @@ function renderMois() {
   const parts = [monthNav()];
   if (!S.demo && !real.hasData) parts.push(welcomeHTML());
   parts.push(heroHTML(s));
-  if (s.base > 0 && s.available > 0 && !s.isFuture) parts.push(`<section class="card"><h2>Rythme du mois <small>dépenses cumulées</small></h2><div class="chart" id="pace-chart"></div><div class="legend"><span><i></i>Tes dépenses</span><span><i class="dash"></i>Rythme qui tient le budget</span></div></section>`);
+  if (s.base > 0 && s.available - s.oneoff > 0 && !s.isFuture) parts.push(`<section class="card"><h2>Rythme du mois <small>dépenses cumulées</small></h2><div class="chart" id="pace-chart"></div><div class="legend"><span><i></i>Tes dépenses</span><span><i class="dash"></i>Rythme qui tient le budget</span>${s.oneoff ? `<span>Hors dépenses exceptionnelles (${esc(eur0(s.oneoff))})</span>` : ''}</div></section>`);
   parts.push(planHTML(s));
   parts.push(catsHTML(s));
   parts.push(recentHTML(s));
@@ -1068,6 +1082,7 @@ function renderBudgets(fromSnap) {
     </section>
     <div class="avail"><span>Disponible chaque mois pour tes dépenses</span><strong id="b-avail"></strong></div>
     <section class="card"><h2>Budgets par catégorie</h2>
+      ${st.cats.some(c => c.oneoff) ? '<p class="hint" style="margin-bottom:10px">« Dépenses exceptionnelles » sert aux frais qui ne reviennent pas chaque mois : taxe, amende, réparation… Ils réduisent ton reste à dépenser, sans fausser ton rythme du mois.</p>' : ''}
       <div class="edit-list">${catRows}</div>
       <div class="row"><button class="btn small" type="button" data-act="suggest">Proposer une répartition</button><button class="btn small" type="button" data-act="add-cat">+ Catégorie</button></div>
       <div class="sum-line" style="margin-top:14px"><span class="muted">Réparti</span><b id="b-assigned"></b></div>
@@ -1228,31 +1243,33 @@ function drawPace(s) {
   const W = Math.max(260, Math.round(box.clientWidth)), H = 160;
   const m = { l: 6, r: 58, t: 14, b: 26 };
   const dim = s.dim, last = s.dayIdx;
+  const target = s.available - s.oneoff;
+  const st = cur().settings;
   const daily = new Array(dim + 1).fill(0);
-  for (const t of s.out) { const d = +t.date.slice(8, 10); if (d >= 1 && d <= dim) daily[d] += t.amount; }
+  for (const t of s.out) { if (s.oneoffIds.has(catOf(t.cat, st).id)) continue; const d = +t.date.slice(8, 10); if (d >= 1 && d <= dim) daily[d] += t.amount; }
   const cum = [0];
   for (let d = 1; d <= dim; d++) cum[d] = cum[d - 1] + daily[d];
   const peak = cum[last] || 0;
-  const ymax = Math.max(s.available, peak, 1) * 1.08;
+  const ymax = Math.max(target, peak, 1) * 1.08;
   const x = d => m.l + d / dim * (W - m.l - m.r);
   const y = v => H - m.b - v / ymax * (H - m.t - m.b);
   let g = '';
   g += `<line class="ch-grid" x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
-  g += `<line class="ch-grid" x1="${m.l}" x2="${W - m.r}" y1="${y(s.available).toFixed(1)}" y2="${y(s.available).toFixed(1)}"/>`;
-  g += `<text class="ch-txt" x="${W - m.r + 6}" y="${(y(s.available) + 3.5).toFixed(1)}">${esc(eur0(s.available))}</text>`;
+  g += `<line class="ch-grid" x1="${m.l}" x2="${W - m.r}" y1="${y(target).toFixed(1)}" y2="${y(target).toFixed(1)}"/>`;
+  g += `<text class="ch-txt" x="${W - m.r + 6}" y="${(y(target) + 3.5).toFixed(1)}">${esc(eur0(target))}</text>`;
   g += `<text class="ch-txt" x="${W - m.r + 6}" y="${(y(0) + 3.5).toFixed(1)}">0 €</text>`;
-  g += `<line class="ch-ideal" x1="${x(0)}" y1="${y(0)}" x2="${x(dim).toFixed(1)}" y2="${y(s.available).toFixed(1)}"/>`;
+  g += `<line class="ch-ideal" x1="${x(0)}" y1="${y(0)}" x2="${x(dim).toFixed(1)}" y2="${y(target).toFixed(1)}"/>`;
   if (last > 0) {
     let path = `M${x(0).toFixed(1)} ${y(0).toFixed(1)}`;
     for (let d = 1; d <= last; d++) path += ` L${x(d).toFixed(1)} ${y(cum[d]).toFixed(1)}`;
     g += `<path class="ch-area" d="${path} L${x(last).toFixed(1)} ${y(0).toFixed(1)} Z"/>`;
     g += `<path class="ch-line" d="${path}"/>`;
     g += `<circle class="ch-dot" cx="${x(last).toFixed(1)}" cy="${y(peak).toFixed(1)}" r="4.5"/>`;
-    if (Math.abs(y(peak) - y(s.available)) > 14) g += `<text class="ch-val" x="${W - m.r + 6}" y="${(y(peak) + 3.5).toFixed(1)}">${esc(eur0(peak))}</text>`;
+    if (Math.abs(y(peak) - y(target)) > 14) g += `<text class="ch-val" x="${W - m.r + 6}" y="${(y(peak) + 3.5).toFixed(1)}">${esc(eur0(peak))}</text>`;
   }
   const ticks = [1, Math.round(dim / 3), Math.round(dim * 2 / 3), dim];
   for (const d of ticks) g += `<text class="ch-txt" x="${x(d).toFixed(1)}" y="${H - 8}" text-anchor="middle">${d}</text>`;
-  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Dépenses cumulées : ${esc(eur0(peak))} au jour ${last}, pour un budget de ${esc(eur0(s.available))}">${g}</svg>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Dépenses cumulées : ${esc(eur0(peak))} au jour ${last}, pour un budget de ${esc(eur0(target))}">${g}</svg>`;
 }
 
 function drawHistory(s) {
@@ -1272,13 +1289,15 @@ function drawHistory(s) {
     const over = avail > 0 && d.spent > avail;
     const isCur = d.ym === curYM();
     if (d.spent > 0) {
-      g += `<rect class="ch-bar${over ? ' over' : ''}${isCur ? ' cur' : ''}" x="${(cx - bw / 2).toFixed(1)}" y="${y(d.spent).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(0) - y(d.spent)).toFixed(1)}" rx="4"/>`;
+      const regular = d.spent - d.oneoff;
+      if (regular > 0) g += `<rect class="ch-bar${over ? ' over' : ''}${isCur ? ' cur' : ''}" x="${(cx - bw / 2).toFixed(1)}" y="${y(regular).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(0) - y(regular)).toFixed(1)}" rx="4"/>`;
+      if (d.oneoff > 0) g += `<rect class="ch-bar oneoff${isCur ? ' cur' : ''}" x="${(cx - bw / 2).toFixed(1)}" y="${y(d.spent).toFixed(1)}" width="${bw.toFixed(1)}" height="${(y(regular) - y(d.spent)).toFixed(1)}" rx="4"/>`;
       g += `<text class="ch-val" x="${cx.toFixed(1)}" y="${(y(d.spent) - 6).toFixed(1)}" text-anchor="middle">${esc(eur0(d.spent).replace(/\s?€/, ''))}</text>`;
     }
     g += `<text class="ch-txt" x="${cx.toFixed(1)}" y="${H - 8}" text-anchor="middle">${MONTHS_S[+d.ym.slice(5) - 1]}</text>`;
   });
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Dépenses des six derniers mois">${g}</svg>
-    <div class="legend"><span>Montants en euros${avail > 0 ? ' · <i class="dash"></i>budget actuel ' + esc(eur0(avail)) : ''}</span></div>`;
+    <div class="legend"><span>Montants en euros${avail > 0 ? ' · <i class="dash"></i>budget actuel ' + esc(eur0(avail)) : ''}${data.some(d => d.oneoff > 0) ? ' · <i class="sq"></i>dont dépenses exceptionnelles' : ''}</span></div>`;
 }
 
 /* ---------- sheet ---------- */
@@ -1559,7 +1578,7 @@ async function askAdvice() {
     mois: ymLabel(S.ym), avancement: s.isCurrent ? `jour ${s.dayIdx} sur ${s.dim}` : s.isPast ? 'mois terminé' : 'mois à venir',
     versements: s.sources.map(x => ({ nom: x.name, prevu: x.amount, recu: x.received ? round2(x.actual) : null, jour: x.day || null })), revenus_en_plus: round2(s.extra), charges_fixes: s.bills.map(b => ({ nom: b.name, prevu: b.amount, paye: b.done ? round2(b.actual) : null })), total_charges_fixes: round2(s.fixed), epargne: s.pots.map(p => ({ compte: p.name, prevu: p.amount, verse: p.done ? round2(p.actual) : null })), epargne_totale: round2(s.saving),
     disponible_pour_depenses: round2(s.available), depense: round2(s.spent), reste: round2(s.remaining),
-    categories: st.cats.map(c => ({ nom: c.name, budget: c.budget, depense: round2(s.byCat[c.id] || 0) })).filter(c => c.budget || c.depense),
+    categories: st.cats.map(c => ({ nom: c.name, budget: c.budget, depense: round2(s.byCat[c.id] || 0), ponctuel: !!c.oneoff })).filter(c => c.budget || c.depense),
     principaux_commercants: top,
   };
   const prompt = `Tu aides une personne à mieux gérer son argent. Réponds en français en la tutoyant, avec exactement 4 puces courtes (une ou deux phrases chacune, chaque puce commence par « • »), sans titre ni formule de politesse, avec des montants précis en euros. Ne donne aucun conseil d'investissement financier précis.
@@ -1679,7 +1698,7 @@ function bind() {
     else if (act === 'del-fixed') { editSettings(s => { s.fixed = s.fixed.filter(f => f.id !== t.dataset.id); }); renderBudgets(); }
     else if (act === 'add-cat') {
       const id = rid('c');
-      editSettings(s => { const used = new Set(s.cats.map(c => c.color)); let color = 1; while (used.has(color) && color < 9) color++; s.cats.splice(Math.max(0, s.cats.length - 1), 0, { id, name: 'Nouvelle catégorie', color, budget: 0 }); });
+      editSettings(s => { const used = new Set(s.cats.map(c => c.color)); let color = 1; while (used.has(color) && color < 10) color++; s.cats.splice(Math.max(0, s.cats.length - 1), 0, { id, name: 'Nouvelle catégorie', color, budget: 0 }); });
       renderBudgets(); const n = document.getElementById('ct-n-' + id); if (n) { n.focus(); n.select(); }
     }
     else if (act === 'del-cat') {

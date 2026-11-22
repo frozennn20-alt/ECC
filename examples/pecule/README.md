@@ -22,6 +22,9 @@ Version en ligne (privée, liée au compte Claude du propriétaire) :
   (« Marquer payé », « Marquer versé ») dès qu'elles sont parties. Coller la
   notification d'un prélèvement qui porte le nom d'une charge fixe la marque
   payée, sans la compter une deuxième fois comme dépense.
+- Catégorie « Dépenses exceptionnelles » pour les frais qui ne reviennent pas
+  chaque mois (taxe, amende, réparation) : ils réduisent le reste à dépenser
+  sans fausser le rythme du mois, et apparaissent à part dans l'historique.
 - Un virement de salaire collé est relié au bon versement (par son nom, les
   mots « salaire / acompte / paie », ou le montant le plus proche) : le
   montant réellement reçu remplace le montant prévu pour le mois.
