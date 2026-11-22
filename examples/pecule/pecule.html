@@ -1,6 +1,8 @@
 <title>Pécule</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,500..900&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400..700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Figtree:wght@400..800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wght@400;500;700&family=Syne:wght@600..800&display=swap">
 <style>
 /* Layout: one phone-width column; a banknote-engraved statement panel on top, ledger rows below, tab bar pinned to the bottom */
 :root{
@@ -16,6 +18,8 @@
   --f-body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --radius:16px; --tab-h:64px;
+  --border-w:1px; --card-shadow:none; --hero-shadow:var(--shadow); --hero-border:0 solid transparent;
+  --tile-top:transparent; --tile-bot:transparent; --sticker:var(--hero-chip); --sticker-ink:var(--hero-ink);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -38,6 +42,31 @@
   --c1:#6EA6E6; --c2:#EE9E5A; --c3:#56C6A0; --c4:#EE7A70; --c5:#DDBB4C; --c6:#B08FE4; --c7:#A0ADB3; --c8:#E888B7; --c9:#C99068; --c10:#97A2FF;
   --scrim:rgba(0,0,0,.6); --shadow:0 12px 30px -14px rgba(0,0,0,.7);
   color-scheme:dark;
+}
+/* Styles au choix. Quai : tableau des départs, toujours sombre. Pop : aplats et contours, toujours clair.
+   Classique : les jetons ci-dessus, qui suivent le thème du téléphone. */
+:root[data-look="quai"]{
+  --bg:#0A1022; --surface:#111A33; --surface-2:#18223F; --line:#283461;
+  --ink:#EEF1FA; --muted:#9DA8C9; --accent:#FFC83D; --accent-ink:#1A1300; --accent-soft:#2D2A1C;
+  --hero:#050A17; --hero-ink:#FFD24A; --hero-muted:#AAB4D3; --hero-track:rgba(255,210,74,.18); --hero-bad:#FF7A6B; --hero-chip:rgba(255,255,255,.07);
+  --good:#5BE39B; --warn:#FFB547; --bad:#FF6F61; --good-soft:#12332A; --warn-soft:#3A2C12; --bad-soft:#3C1A1C;
+  --c1:#6AA8FF; --c2:#FF9F5A; --c3:#4FE0B0; --c4:#FF7A7A; --c5:#E8C547; --c6:#B794FF; --c7:#A3ADC8; --c8:#FF7EC0; --c9:#D19A6E; --c10:#8C9BFF;
+  --scrim:rgba(2,5,14,.72); --shadow:0 18px 40px -18px rgba(0,0,0,.85);
+  --tile-top:#1B243C; --tile-bot:#141B2F;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif; --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif; --f-mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:dark;
+}
+:root[data-look="pop"]{
+  --bg:#F2F0FF; --surface:#FFFFFF; --surface-2:#EAE7FB; --line:#17131F;
+  --ink:#17131F; --muted:#575169; --accent:#2B3BFF; --accent-ink:#FFFFFF; --accent-soft:#DCE0FF;
+  --hero:#FF5A92; --hero-ink:#17131F; --hero-muted:#4A1430; --hero-track:rgba(23,19,31,.2); --hero-bad:#FFFFFF; --hero-chip:rgba(255,255,255,.5);
+  --good:#0A8F62; --warn:#B35F00; --bad:#D81E3A; --good-soft:#D6F5E8; --warn-soft:#FFE8C4; --bad-soft:#FFD8DE;
+  --c1:#2B3BFF; --c2:#E06300; --c3:#0A9E70; --c4:#D81E3A; --c5:#9C7400; --c6:#7E33F0; --c7:#625E75; --c8:#E0307A; --c9:#94562B; --c10:#008BA8;
+  --scrim:rgba(23,19,31,.5); --shadow:none;
+  --border-w:2px; --card-shadow:4px 4px 0 #17131F; --hero-shadow:6px 6px 0 #17131F; --hero-border:2px solid #17131F;
+  --sticker:#FFE14D; --sticker-ink:#17131F;
+  --f-display:"Syne","Arial Black",system-ui,sans-serif; --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif; --f-mono:"Martian Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  color-scheme:light;
 }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
@@ -67,7 +96,7 @@ button{font:inherit;color:inherit}
 .icon-btn:disabled{opacity:.35;cursor:default}
 
 /* hero */
-.hero{position:relative;overflow:hidden;isolation:isolate;background:var(--hero);color:var(--hero-ink);border-radius:22px;padding:20px 20px 18px;box-shadow:var(--shadow)}
+.hero{position:relative;overflow:hidden;isolation:isolate;background:var(--hero);color:var(--hero-ink);border-radius:22px;padding:20px 20px 18px;box-shadow:var(--hero-shadow);border:var(--hero-border)}
 #guilloche{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
 .eyebrow{font-size:.72rem;letter-spacing:.13em;text-transform:uppercase;font-weight:600;color:var(--hero-muted)}
 .big{font-family:var(--f-display);font-weight:800;font-variation-settings:"wdth" 112;font-size:clamp(2.5rem,12vw,3.6rem);line-height:1.02;margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
@@ -103,7 +132,7 @@ button{font:inherit;color:inherit}
 .hero .btn{margin-top:14px;background:var(--hero-ink);color:var(--hero);border-color:var(--hero-ink)}
 
 /* cards */
-.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.card{background:var(--surface);border:var(--border-w) solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--card-shadow)}
 .card h2{margin:0 0 12px;font-family:var(--f-display);font-weight:700;font-variation-settings:"wdth" 106;font-size:1.02rem;display:flex;align-items:baseline;justify-content:space-between;gap:10px;text-wrap:balance}
 .card h2 small{font-family:var(--f-body);font-weight:500;font-size:.8rem;color:var(--muted)}
 .card p{margin:0 0 10px}
@@ -253,7 +282,7 @@ details ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;
 .advice-out{white-space:pre-wrap;font-size:.92rem;margin-top:12px}
 
 /* tab bar */
-.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom, 0px);padding-left:max(8px, env(safe-area-inset-left, 0px));padding-right:max(8px, env(safe-area-inset-right, 0px))}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:var(--border-w) solid var(--line);padding-bottom:env(safe-area-inset-bottom, 0px);padding-left:max(8px, env(safe-area-inset-left, 0px));padding-right:max(8px, env(safe-area-inset-right, 0px))}
 .tabbar-in{max-width:620px;margin:0 auto;height:var(--tab-h);display:grid;grid-template-columns:repeat(5,1fr);align-items:center}
 .tab{background:none;border:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:3px;font-weight:600;font-size:.68rem;cursor:pointer;padding:6px 0}
 .tab svg{width:22px;height:22px}
@@ -266,6 +295,52 @@ details ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;
 .toast.warn{background:var(--warn-soft);color:var(--ink);border:1px solid var(--warn)}
 .toast.bad{background:var(--bad-soft);color:var(--ink);border:1px solid var(--bad)}
 
+/* header style switch, board header, flip tiles */
+.top-r{display:flex;align-items:center;gap:8px}
+.look-btn{display:inline-flex;align-items:center;gap:3px;height:30px;padding:0 10px;border-radius:99px;border:var(--border-w) solid var(--line);background:var(--surface);cursor:pointer}
+.look-btn i{width:9px;height:9px;border-radius:50%}
+.look-btn i:nth-child(1){background:var(--hero)} .look-btn i:nth-child(2){background:var(--accent)} .look-btn i:nth-child(3){background:var(--c8)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.board-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.count{flex:none;font-family:var(--f-display);font-weight:800;font-size:1rem;letter-spacing:.02em;padding:3px 10px;border-radius:8px;background:var(--sticker);color:var(--sticker-ink);font-variant-numeric:tabular-nums}
+.hero-actions{margin-top:12px}
+.link-btn{background:none;border:1px solid var(--hero-track);color:var(--hero-ink);border-radius:99px;padding:6px 12px;font-weight:600;font-size:.8rem;cursor:pointer}
+.flap{display:inline}
+.looks{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.look-opt{display:flex;flex-direction:column;gap:8px;padding:8px;border-radius:12px;border:var(--border-w) solid var(--line);background:var(--surface);cursor:pointer;text-align:left;color:var(--ink);font-weight:700;font-size:.85rem;min-width:0}
+.look-opt[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:2px}
+.look-opt .pv{height:54px;border-radius:8px;display:flex;align-items:flex-end;padding:6px 8px;font-size:1.25rem;font-weight:800;line-height:1}
+.check{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line);font-size:.92rem;cursor:pointer}
+.check:first-child{border-top:0}
+.check input{width:20px;height:20px;flex:none;accent-color:var(--accent)}
+
+/* Quai */
+[data-look="quai"] #guilloche,[data-look="pop"] #guilloche{display:none}
+[data-look="quai"] .hero{background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.5px);background-size:7px 7px}
+[data-look="quai"] .big{font-size:clamp(2.6rem,13.5vw,4.1rem);letter-spacing:0;line-height:1.25;margin-top:10px}
+[data-look="quai"] .flap{display:inline-grid;place-items:center;min-width:.6em;height:1.16em;margin-right:.07em;padding:0 .05em;border-radius:.08em;background:linear-gradient(var(--tile-top) 0 50%,var(--tile-bot) 50% 100%);position:relative;box-shadow:0 2px 0 rgba(0,0,0,.55)}
+[data-look="quai"] .flap::after{content:"";position:absolute;left:0;right:0;top:calc(50% - .5px);height:1px;background:rgba(0,0,0,.65)}
+[data-look="quai"] .flap.sp{background:none;box-shadow:none;min-width:.22em;padding:0}
+[data-look="quai"] .flap.sp::after{display:none}
+[data-look="quai"] .count{background:var(--tile-top);color:var(--hero-ink);border-radius:6px;box-shadow:0 2px 0 rgba(0,0,0,.55);font-size:1.15rem}
+[data-look="quai"] .brand,[data-look="quai"] .month-nav h1,[data-look="quai"] .card h2,[data-look="quai"] .sheet-h h2{text-transform:uppercase;letter-spacing:.05em}
+[data-look="quai"] .card h2{font-size:1.15rem}
+[data-look="quai"] .card h2 small{text-transform:none;letter-spacing:0}
+[data-look="quai"] .mark{border-radius:6px}
+[data-look="quai"] .eyebrow{letter-spacing:.16em}
+/* Pop */
+[data-look="pop"] .btn:not(.ghost),[data-look="pop"] .fab,[data-look="pop"] .chip,[data-look="pop"] .look-btn,[data-look="pop"] .icon-btn{border-width:2px;border-color:var(--ink)}
+[data-look="pop"] .btn:not(.ghost),[data-look="pop"] .fab{box-shadow:3px 3px 0 var(--ink)}
+[data-look="pop"] .btn:not(.ghost):active{box-shadow:1px 1px 0 var(--ink);transform:translate(2px,2px)}
+[data-look="pop"] .chip[aria-pressed="true"]{background:var(--c, var(--accent));color:var(--surface);box-shadow:none}
+[data-look="pop"] .big{letter-spacing:-.04em;font-size:clamp(2.1rem,10vw,3.1rem);white-space:nowrap}
+[data-look="pop"] .card h2{font-size:.98rem}
+[data-look="pop"] .count{border:2px solid var(--ink);border-radius:99px;transform:rotate(-7deg);padding:5px 12px}
+[data-look="pop"] .payday{border:1.5px solid var(--hero-ink)}
+[data-look="pop"] .sheet{border:2px solid var(--ink)}
+[data-look="pop"] .tx-ico{border:2px solid var(--ink)}
+@media (prefers-reduced-motion:no-preference){[data-look="quai"] .big.flip .flap{animation:flap .55s cubic-bezier(.25,1.3,.5,1) both;animation-delay:calc(var(--i) * 40ms)}@keyframes flap{from{transform:perspective(260px) rotateX(70deg)}to{transform:none}}}
+
 @media (max-width:380px){.grid2{grid-template-columns:1fr}.edit-row{grid-template-columns:auto 1fr 96px auto}.edit-row.nofix{grid-template-columns:1fr 96px auto}.edit-row.inc,.edit-head{grid-template-columns:1fr 92px 46px 36px}}
 @media (prefers-reduced-motion:no-preference){.bar>span,.meter>span{transition:width .35s ease}.sheet{animation:up .22s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}to{transform:none;opacity:1}}}
 </style>
@@ -273,7 +348,7 @@ details ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;
 <div class="app">
   <header class="top">
     <div class="brand"><span class="mark" aria-hidden="true"></span>Pécule</div>
-    <span class="mode" id="mode"><i></i><span>Chargement…</span></span>
+    <div class="top-r"><button class="look-btn" id="look-btn" type="button" aria-label="Changer de style"><i></i><i></i><i></i></button><span class="mode" id="mode"><i></i><span>Chargement…</span></span></div>
   </header>
   <div id="banner"></div>
   <main>
@@ -346,6 +421,28 @@ details ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;
   </form>
 </div>
 
+<div class="scrim" id="recal-scrim" hidden>
+  <form class="sheet" id="recal-form" role="dialog" aria-modal="true" aria-labelledby="recal-title" novalidate>
+    <div class="grab" aria-hidden="true"></div>
+    <div class="sheet-h">
+      <h2 id="recal-title">Ton solde réel</h2>
+      <button class="icon-btn" type="button" id="recal-close" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <p class="hint">Regarde le solde de ton compte courant dans l’app de ta banque et note-le ici. Pécule garde la différence comme une opération « Écart avec le solde réel », pour repartir du bon montant.</p>
+    <div class="field">
+      <label for="r-balance">Solde de ton compte aujourd’hui</label>
+      <div class="amount"><input id="r-balance" inputmode="decimal" autocomplete="off" placeholder="0,00"><span>€</span></div>
+    </div>
+    <div class="field" id="r-items-wrap" hidden>
+      <span class="lbl">Déjà partis, donc compris dans ce solde</span>
+      <div id="r-items"></div>
+    </div>
+    <p class="hint" id="r-preview"></p>
+    <div class="err" id="r-err" hidden></div>
+    <div class="sheet-actions"><button class="btn primary" type="submit">Recaler</button></div>
+  </form>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -355,6 +452,8 @@ details ul{margin:10px 0 0;padding-left:18px;display:flex;flex-direction:column;
 /* Lien de la page publiée : sert aux automatisations du téléphone. */
 const APP_LINK = 'https://claude.ai/artifact/5sBjhzjZE4wAhxH8JbwPSG';
 const LS_KEY = 'pecule:v1';
+const LOOKS = ['quai', 'pop', 'classique'];
+const LOOK_NAMES = { quai: 'Quai', pop: 'Pop', classique: 'Classique' };
 
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -564,7 +663,7 @@ function normalizeSettings(raw) {
     ? raw.savings.filter(a => a && typeof a === 'object').map(a => ({ id: str(a.id, 40) || rid('s'), name: str(a.name, 40), amount: num(a.amount), day: dayOf(a.day) }))
     : [];
   if (!Array.isArray(raw.savings) && num(raw.savings) > 0) savings = [{ id: 's1', name: 'Épargne', amount: num(raw.savings) }];
-  return { v: 3, incomes, savings, fixed, cats, memory };
+  return { v: 3, incomes, savings, fixed, cats, memory, look: LOOKS.includes(raw.look) ? raw.look : '' };
 }
 
 function cleanTx(id, t, ym) {
@@ -572,7 +671,7 @@ function cleanTx(id, t, ym) {
   const amount = typeof t.amount === 'number' && Number.isFinite(t.amount) && t.amount > 0 ? t.amount : 0;
   if (!amount) return null;
   const date = typeof t.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(t.date) ? t.date : `${ym}-01`;
-  return { id, ym, amount, kind: ['in', 'save', 'fixed'].includes(t.kind) ? t.kind : 'out', sav: typeof t.sav === 'string' ? t.sav.slice(0, 40) : '', fix: typeof t.fix === 'string' ? t.fix.slice(0, 40) : '', label: typeof t.label === 'string' ? t.label.slice(0, 60) : '', cat: typeof t.cat === 'string' ? t.cat : 'autre', date, src: t.src === 'notif' ? 'notif' : 'manuel', created: typeof t.created === 'number' ? t.created : 0, inc: typeof t.inc === 'string' ? t.inc.slice(0, 40) : '' };
+  return { id, ym, amount, kind: ['in', 'save', 'fixed', 'adjust'].includes(t.kind) ? t.kind : 'out', sav: typeof t.sav === 'string' ? t.sav.slice(0, 40) : '', fix: typeof t.fix === 'string' ? t.fix.slice(0, 40) : '', label: typeof t.label === 'string' ? t.label.slice(0, 60) : '', cat: typeof t.cat === 'string' ? t.cat : 'autre', date, src: t.src === 'notif' ? 'notif' : 'manuel', created: typeof t.created === 'number' ? t.created : 0, inc: typeof t.inc === 'string' ? t.inc.slice(0, 40) : '' };
 }
 
 const real = { settings: defaultSettings(), months: {}, hasSettings: false, hasData: false };
@@ -607,7 +706,7 @@ function stats(ym) {
     return { ...i, day: i.day ? Math.min(i.day, dim) : 0, actual: sum(got), received: got.length > 0, value: got.length ? sum(got) : i.amount };
   });
   const ids = new Set(st.incomes.map(i => i.id));
-  const spent = sum(out), extra = sum(inc.filter(t => !ids.has(t.inc)));
+  const spent = sum(out) + sum(txs.filter(t => t.kind === 'adjust')), extra = sum(inc.filter(t => !ids.has(t.inc)));
   /* Charges fixes : montant prévu, remplacé par le paiement noté (« Marquer payé »).
      Un paiement de charge fixe n'est jamais compté en plus comme dépense. */
   const fixedTx = txs.filter(t => t.kind === 'fixed');
@@ -674,7 +773,8 @@ function periodStats() {
   const out = txs.filter(t => t.kind === 'out');
   const fixedTx = txs.filter(t => t.kind === 'fixed');
   const saves = txs.filter(t => t.kind === 'save');
-  const paid = sum(out) + sum(fixedTx) + sum(saves);
+  const adjusts = txs.filter(t => t.kind === 'adjust');
+  const paid = sum(out) + sum(fixedTx) + sum(saves) + sum(adjusts);
   const inPeriod = day => {
     if (!day) return null;
     for (const k of [0, 1]) { const d = occ(start.getFullYear(), start.getMonth() + k, day); if (d >= start && d < end) return d; }
@@ -693,7 +793,7 @@ function periodStats() {
   const oneoffIds = new Set(st.cats.filter(c => c.oneoff).map(c => c.id));
   const regular = out.filter(t => !oneoffIds.has(catOf(t.cat, st).id));
   const linked = (t, type) => items.some(x => x.type === type && x.id === (type === 'fixed' ? t.fix : t.sav));
-  const committed = items.reduce((a, x) => a + x.value, 0) + sum(fixedTx.filter(t => !linked(t, 'fixed'))) + sum(saves.filter(t => !linked(t, 'save'))) + sum(out) - sum(regular);
+  const committed = items.reduce((a, x) => a + x.value, 0) + sum(fixedTx.filter(t => !linked(t, 'fixed'))) + sum(saves.filter(t => !linked(t, 'save'))) + sum(out) - sum(regular) + sum(adjusts);
   const varBudget = pool - committed;
   const expected = varBudget * elapsed / totalDays;
   return { start, end, prev, next, totalDays, daysLeft, elapsed, received, own: own.length > 0, extra, pool, paid, items, undated, upcoming, reste, perDay: daysLeft > 0 ? reste / daysLeft : null, regular, varBudget, delta: sum(regular) - expected, txs };
@@ -765,6 +865,7 @@ function startLocal() {
     }
   } catch (e) { /* stockage illisible : on repart de zéro */ }
   if (pendingSet) { real.settings = pendingSet; pendingSet = null; persistLocal(); }
+  if (real.settings.look && real.settings.look !== S.look) applyLook(real.settings.look);
   S.store = 'local'; S.loaded = true; readyResolve();
   render();
 }
@@ -779,6 +880,7 @@ function onCloudSnap(snap) {
     else if (d.id.startsWith('m-')) months[d.id.slice(2)] = d.data();
   }
   if (!pendingSet) { real.settings = normalizeSettings(settingsRaw); real.hasSettings = !!settingsRaw; }
+  if (!S.demo && real.settings.look && real.settings.look !== S.look) applyLook(real.settings.look);
   real.months = months;
   real.hasData = real.hasSettings || Object.keys(months).length > 0;
   if (!snap.metadata.fromCache) { clearTimeout(loadTimer); S.note = ''; }
@@ -899,12 +1001,22 @@ function renderTop() {
   $('#banner').innerHTML = b;
 }
 
+function flaps(text) {
+  const tiles = [...text].map((ch, i) => (/\s/.test(ch) ? '<span class="flap sp"> </span>' : `<span class="flap" style="--i:${i}">${esc(ch)}</span>`)).join('');
+  return `<span class="sr">${esc(text)}</span><span aria-hidden="true">${tiles}</span>`;
+}
+function bigHTML(text, neg) {
+  const changed = text !== S.lastBig;
+  S.lastBig = text;
+  return `<div class="big${neg ? ' neg' : ''}${changed ? ' flip' : ''}">${flaps(text)}</div>`;
+}
+
 function heroHTML(s) {
   const mName = MONTHS[+S.ym.slice(5) - 1];
   if (!(s.base > 0)) {
     return `<section class="hero"><canvas id="guilloche" aria-hidden="true"></canvas>
       <div class="eyebrow">Dépensé en ${esc(mName)}</div>
-      <div class="big">${eur(s.spent)}</div>
+      ${bigHTML(eur(s.spent))}
       <div class="hero-sub">${plural(s.out.length, 'dépense', 'dépenses')}. Indique tes revenus (salaire, acompte, solde…) pour savoir combien il te reste.</div>
       <button class="btn" type="button" data-go="budgets">Indiquer mes revenus</button></section>`;
   }
@@ -930,7 +1042,7 @@ function heroHTML(s) {
   const marker = s.isCurrent ? `<i style="left:${(s.dayIdx / s.dim * 100).toFixed(1)}%" title="Aujourd'hui"></i>` : '';
   return `<section class="hero"><canvas id="guilloche" aria-hidden="true"></canvas>
     <div class="eyebrow">${eyebrow}</div>
-    <div class="big${over ? ' neg' : ''}">${eur(s.remaining)}</div>
+    ${bigHTML(eur(s.remaining), over)}
     <div class="hero-sub">${sub}</div>${paydaysHTML(s)}
     <div class="meter" role="img" aria-label="${Math.round(pct)} % du budget dépensé"><span class="${over ? 'over' : ''}" style="width:${pct.toFixed(1)}%"></span>${marker}</div>
     <div class="hero-row"><span>Dépensé ${eur(s.spent)}</span><span>Budget ${eur(s.available)}</span></div>
@@ -999,12 +1111,13 @@ function periodHeroHTML(ps) {
   const calc = [`${eur0(ps.pool)} reçus`, `${eur0(ps.paid)} payés`];
   if (ps.upcoming) calc.push(`${eur0(ps.upcoming)} à venir`);
   return `<section class="hero"><canvas id="guilloche" aria-hidden="true"></canvas>
-    <div class="eyebrow">Reste jusqu’au ${esc(fmtDM(ps.end))}</div>
-    <div class="big${over ? ' neg' : ''}">${eur(ps.reste)}</div>
+    <div class="board-head"><span class="eyebrow">Reste jusqu’au ${esc(fmtDM(ps.end))}</span><span class="count" title="Jours avant ${esc(ps.next.i.name || 'la paie')}">J-${ps.daysLeft}</span></div>
+    ${bigHTML(eur(ps.reste), over)}
     <div class="hero-sub">${sub}</div>${chips}
     <div class="meter" role="img" aria-label="${Math.round(used)} % de la paie déjà payé ou réservé"><span class="${over ? 'over' : ''}" style="width:${used.toFixed(1)}%"></span><i style="left:${(ps.elapsed / ps.totalDays * 100).toFixed(1)}%" title="Aujourd'hui"></i></div>
     <div class="hero-row"><span>Déjà payé ${eur(ps.paid)}</span><span>À venir ${eur(ps.upcoming)}</span></div>
     <div class="hero-foot">${pace}<span class="calc">${esc(calc.join(' − '))}</span></div>
+    <div class="hero-actions"><button class="link-btn" type="button" data-act="recal">Recaler sur mon solde réel</button></div>
   </section>`;
 }
 
@@ -1051,16 +1164,17 @@ function catsHTML(s) {
 }
 
 function txRow(t, st) {
-  const isIn = t.kind === 'in', isSave = t.kind === 'save', isFix = t.kind === 'fixed';
-  const c = isIn ? { name: 'Revenu', color: 3 } : isSave ? { name: 'Épargne', color: 1 } : isFix ? { name: 'Charge fixe', color: 9 } : catOf(t.cat, st);
+  const isIn = t.kind === 'in', isSave = t.kind === 'save', isFix = t.kind === 'fixed', isAdj = t.kind === 'adjust';
+  const c = isIn ? { name: 'Revenu', color: 3 } : isSave ? { name: 'Épargne', color: 1 } : isFix ? { name: 'Charge fixe', color: 9 } : isAdj ? { name: 'Recalage', color: 7 } : catOf(t.cat, st);
   const initial = (t.label || c.name || '?').trim().charAt(0).toUpperCase() || '?';
   let meta;
   if (isIn) { const source = t.inc ? st.incomes.find(i => i.id === t.inc) : null; meta = [source ? `Revenu · ${source.name || 'versement prévu'}` : 'Revenu en plus']; }
   else if (isSave) { const pot = t.sav ? st.savings.find(a => a.id === t.sav) : null; meta = [`Épargne · ${pot ? pot.name || 'compte' : 'autre compte'}`]; }
+  else if (isAdj) meta = ['Recalage sur le solde réel'];
   else if (isFix) { const bill = t.fix ? st.fixed.find(f => f.id === t.fix) : null; meta = [`Charge fixe · ${bill ? bill.name || 'sans nom' : 'supprimée'}`]; }
   else meta = [catName(c)];
   if (t.src === 'notif') meta.push('notif');
-  const fallback = isIn ? 'Revenu' : isSave ? 'Épargne' : isFix ? 'Charge fixe' : 'Dépense';
+  const fallback = isIn ? 'Revenu' : isSave ? 'Épargne' : isFix ? 'Charge fixe' : isAdj ? 'Écart avec le solde réel' : 'Dépense';
   return `<button class="tx" type="button" data-tx="${esc(t.id)}" data-ym="${esc(t.ym)}" style="--c:var(--c${c.color})"><span class="tx-ico" aria-hidden="true">${esc(initial)}</span><span class="tx-main"><span class="tx-label">${esc(t.label || fallback)}</span><span class="tx-meta">${esc(meta.join(' · '))}</span></span><span class="tx-amt mono${isIn ? ' in' : isSave ? ' save' : ''}">${isIn ? '+' : isSave ? '' : '−'}${eur(t.amount)}</span></button>`;
 }
 
@@ -1189,6 +1303,10 @@ function renderBudgets(fromSnap) {
       <div class="sum-line" style="margin-top:14px"><span class="muted">Réparti</span><b id="b-assigned"></b></div>
       <div class="bar" style="--c:var(--accent)"><span id="b-assigned-bar" style="width:0"></span></div>
       <p class="hint" id="b-assigned-hint" style="margin-top:6px"></p>
+    </section>
+    <section class="card"><h2>Style de l’app</h2>
+      <div class="looks">${LOOKS.map(l => `<button class="look-opt" type="button" data-lookopt="${l}" aria-pressed="${S.look === l}"><span class="pv" style="${LOOK_PREVIEW[l]}">323 €</span>${LOOK_NAMES[l]}</button>`).join('')}</div>
+      <p class="hint" style="margin-top:10px">${LOOK_DESC[S.look]} Tu peux aussi changer de style avec les pastilles en haut de l’écran.</p>
     </section>
     <section class="card"><h2>Mes données</h2>
       <p class="hint">${modeTxt}</p>
@@ -1620,8 +1738,8 @@ async function submitSheet(e) {
   const bill = st.fixed.find(f => f.id === fixId);
   const savId = kind === 'save' && st.savings.some(a => a.id === sheet.sav) ? sheet.sav : '';
   const pot = st.savings.find(a => a.id === savId);
-  const label = ($('#f-label').value.trim() || (kind === 'in' ? 'Revenu' : kind === 'save' ? (pot && pot.name) || 'Épargne' : kind === 'fixed' ? (bill && bill.name) || 'Charge fixe' : 'Dépense')).slice(0, 60);
-  const cat = kind === 'in' ? 'revenu' : kind === 'save' ? 'epargne' : kind === 'fixed' ? 'fixe' : catOf(sheet.cat, st).id;
+  const label = ($('#f-label').value.trim() || (kind === 'in' ? 'Revenu' : kind === 'save' ? (pot && pot.name) || 'Épargne' : kind === 'fixed' ? (bill && bill.name) || 'Charge fixe' : kind === 'adjust' ? 'Écart avec le solde réel' : 'Dépense')).slice(0, 60);
+  const cat = kind === 'in' ? 'revenu' : kind === 'save' ? 'epargne' : kind === 'fixed' ? 'fixe' : kind === 'adjust' ? 'ajustement' : catOf(sheet.cat, st).id;
   const old = sheet.editing;
   const id = old ? old.id : rid('t');
   const ym = date.slice(0, 7);
@@ -1692,8 +1810,9 @@ async function exportCSV() {
   if (!all.length) { toast('Aucune opération à exporter pour l’instant.'); return; }
   const safe = v => { let s = String(v); if (/^[=+\-@]/.test(s)) s = "'" + s; return /[;"\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const rows = [['Date', 'Type', 'Libellé', 'Catégorie', 'Montant (€)', 'Source'].join(';')];
-  const typeOf = t => (t.kind === 'in' ? 'Revenu' : t.kind === 'save' ? 'Épargne' : t.kind === 'fixed' ? 'Charge fixe' : 'Dépense');
+  const typeOf = t => (t.kind === 'in' ? 'Revenu' : t.kind === 'save' ? 'Épargne' : t.kind === 'fixed' ? 'Charge fixe' : t.kind === 'adjust' ? 'Recalage' : 'Dépense');
   const groupOf = t => {
+    if (t.kind === 'adjust') return 'Recalage';
     if (t.kind === 'fixed') return (st.fixed.find(f => f.id === t.fix) || { name: 'Charge fixe' }).name || 'Charge fixe';
     if (t.kind === 'in') return (st.incomes.find(i => i.id === t.inc) || { name: 'Revenu en plus' }).name || 'Revenu';
     if (t.kind === 'save') return (st.savings.find(a => a.id === t.sav) || { name: 'Autre épargne' }).name || 'Épargne';
@@ -1752,6 +1871,90 @@ function suggestBudgets() {
 
 function editSettings(fn) { const next = clone(cur().settings); fn(next); saveSettings(next); return next; }
 
+/* ---------- styles ---------- */
+const LOOK_PREVIEW = {
+  quai: "background:#050A17;color:#FFD24A;font-family:'Barlow Condensed',sans-serif;letter-spacing:.04em",
+  pop: "background:#FF5A92;color:#17131F;border:2px solid #17131F;font-family:Syne,sans-serif",
+  classique: "background:#0C3A31;color:#EEF7F3;font-family:Archivo,sans-serif",
+};
+const LOOK_DESC = {
+  quai: 'Quai : un tableau des départs, ton reste en lettres jaunes et le compte à rebours jusqu’à la paie.',
+  pop: 'Pop : couleurs franches et contours épais, en clair.',
+  classique: 'Classique : vert billet et sobre, clair ou sombre selon ton téléphone.',
+};
+function applyLook(look) {
+  const l = LOOKS.includes(look) ? look : 'quai';
+  if (l === 'classique') document.documentElement.removeAttribute('data-look');
+  else document.documentElement.setAttribute('data-look', l);
+  S.look = l;
+  try { localStorage.setItem('pecule:look', l); } catch (e) { /* stockage indisponible */ }
+}
+function setLook(look) {
+  applyLook(look);
+  if (!S.demo && S.loaded && cur().settings.look !== S.look) editSettings(s => { s.look = S.look; });
+  S.lastBig = '';
+  render();
+  toast(`Style : ${LOOK_NAMES[S.look]}`);
+}
+
+/* ---------- recalage sur le solde réel ---------- */
+function recalPlan() {
+  const ps = periodStats();
+  if (!ps) return null;
+  const raw = $('#r-balance').value.trim();
+  const bal = raw ? toNumber(raw.replace('−', '-')) : NaN;
+  const checked = [...document.querySelectorAll('#r-items input:checked')].map(i => ps.items.find(x => x.type === i.dataset.type && x.id === i.dataset.id)).filter(Boolean);
+  const checkedSum = checked.reduce((a, x) => a + x.amount, 0);
+  const expected = round2(ps.pool - ps.paid - checkedSum);
+  const ok = Number.isFinite(bal);
+  return { ps, bal, checked, expected, diff: ok ? round2(expected - bal) : null, after: ok ? round2(bal - (ps.upcoming - checkedSum)) : null };
+}
+function updateRecalPreview() {
+  const p = recalPlan();
+  if (!p) return;
+  const out = $('#r-preview');
+  if (p.diff === null) { out.textContent = `D’après tes opérations, il devrait te rester ${eur(p.expected)} sur ton compte.`; return; }
+  const gap = Math.abs(p.diff) < 0.01 ? 'Tout correspond déjà.'
+    : p.diff > 0 ? `Pécule comptait ${eur(p.expected)} : les ${eur(p.diff)} de différence seront notés comme dépenses non détaillées.`
+    : `Tu as ${eur(-p.diff)} de plus que prévu : ils seront notés comme revenu en plus.`;
+  out.textContent = `${gap} Ensuite, il te restera ${eur(p.after)} jusqu’au ${fmtDM(p.ps.end)}.`.replace(/\.\.$/, '.');
+}
+function openRecal() {
+  const ps = periodStats();
+  if (!ps) return;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const due = ps.items.filter(x => !x.done && x.when <= today);
+  $('#r-balance').value = '';
+  $('#r-err').hidden = true;
+  $('#r-items-wrap').hidden = !due.length;
+  $('#r-items').innerHTML = due.map(x => `<label class="check"><input type="checkbox" id="r-it-${esc(x.type)}-${esc(x.id)}" data-type="${esc(x.type)}" data-id="${esc(x.id)}" checked><span>${esc(x.name || (x.type === 'fixed' ? 'Charge fixe' : 'Épargne'))} · ${esc(eur0(x.amount))} · le ${esc(fmtDM(x.when))}</span></label>`).join('');
+  updateRecalPreview();
+  $('#recal-scrim').hidden = false;
+  document.body.classList.add('locked');
+  setTimeout(() => $('#r-balance').focus(), 80);
+}
+function closeRecal() { $('#recal-scrim').hidden = true; document.body.classList.remove('locked'); }
+async function submitRecal(e) {
+  e.preventDefault();
+  const p = recalPlan();
+  if (!p) return;
+  if (p.diff === null) { const err = $('#r-err'); err.textContent = 'Indique le solde affiché par ta banque, par exemple 323,43.'; err.hidden = false; return; }
+  closeRecal();
+  try {
+    for (const x of p.checked) {
+      const date = isoDate(x.when);
+      const kind = x.type === 'fixed' ? 'fixed' : 'save';
+      await putTx(date.slice(0, 7), rid('t'), { amount: x.amount, kind, label: x.name || (kind === 'fixed' ? 'Charge fixe' : 'Épargne'), cat: kind === 'fixed' ? 'fixe' : 'epargne', date, src: 'manuel', created: Date.now(), inc: '', sav: kind === 'save' ? x.id : '', fix: kind === 'fixed' ? x.id : '' });
+    }
+    if (Math.abs(p.diff) >= 0.01) {
+      const date = todayISO();
+      const base = { label: 'Écart avec le solde réel', date, src: 'manuel', created: Date.now(), inc: '', sav: '', fix: '' };
+      await putTx(date.slice(0, 7), rid('t'), p.diff > 0 ? { ...base, amount: p.diff, kind: 'adjust', cat: 'ajustement' } : { ...base, amount: -p.diff, kind: 'in', cat: 'revenu' });
+    }
+    toast(`Recalé : il te reste ${eur(p.after)} jusqu’au ${fmtDM(p.ps.end)}`);
+  } catch (ex) { toast(writeError(ex), 'bad'); }
+}
+
 /* ---------- routing & events ---------- */
 const VIEWS = ['mois', 'operations', 'budgets', 'notifs'];
 function setHash(v) { try { history.replaceState(null, '', '#' + v); } catch (e) { /* adresse non modifiable ici */ } }
@@ -1795,6 +1998,7 @@ function bind() {
     if (t.dataset.filter) { S.filter = t.dataset.filter; renderOps(); return; }
     if (t.dataset.platform) { S.platform = t.dataset.platform; renderNotifs(); return; }
     if (t.dataset.copy) { copyText(t.dataset.copy, t); return; }
+    if (t.dataset.lookopt) { setLook(t.dataset.lookopt); return; }
     if (t.dataset.sample) { S.test = t.dataset.sample; const ta = $('#t-paste'); if (ta) ta.value = S.test; renderTest(); return; }
     const act = t.dataset.act;
     if (!act) return;
@@ -1810,6 +2014,7 @@ function bind() {
       editSettings(s => { s.incomes.push({ id: a, name: 'Acompte', amount: 0, day: 15 }, { id: b, name: 'Solde', amount: 0, day: 30 }); });
       renderBudgets(); const n = document.getElementById('in-a-' + a); if (n) n.focus();
     }
+    else if (act === 'recal') openRecal();
     else if (act === 'mark') {
       const type = t.dataset.type, id = t.dataset.id;
       const st = cur().settings;
@@ -1875,7 +2080,13 @@ function bind() {
   $('#sheet-close').addEventListener('click', closeSheet);
   $('#f-delete').addEventListener('click', deleteFromSheet);
   $('#scrim').addEventListener('click', e => { if (e.target === e.currentTarget) closeSheet(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#scrim').hidden) closeSheet(); });
+  document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; if (!$('#scrim').hidden) closeSheet(); if (!$('#recal-scrim').hidden) closeRecal(); });
+  $('#look-btn').addEventListener('click', () => setLook(LOOKS[(LOOKS.indexOf(S.look) + 1) % LOOKS.length]));
+  $('#recal-form').addEventListener('submit', submitRecal);
+  $('#recal-close').addEventListener('click', closeRecal);
+  $('#recal-scrim').addEventListener('click', e => { if (e.target === e.currentTarget) closeRecal(); });
+  $('#r-balance').addEventListener('input', updateRecalPreview);
+  $('#r-items').addEventListener('change', updateRecalPreview);
   $('#f-notif').addEventListener('input', onPasteInput);
   $('#f-label').addEventListener('input', () => {
     if (!sheet.catTouched && sheet.kind === 'out') { sheet.cat = guessCat($('#f-label').value, cur().settings); renderSheetCats(); }
@@ -1901,6 +2112,9 @@ function bind() {
   new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 }
 
+let savedLook = null;
+try { savedLook = localStorage.getItem('pecule:look'); } catch (e) { savedLook = null; }
+applyLook(savedLook || 'quai');
 bind();
 handleRoute();
 render();

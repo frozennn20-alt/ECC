@@ -31,6 +31,12 @@ Version en ligne (privée, liée au compte Claude du propriétaire) :
 - Un virement de salaire collé est relié au bon versement (par son nom, les
   mots « salaire / acompte / paie », ou le montant le plus proche) : le
   montant réellement reçu remplace le montant prévu pour le mois.
+- **Recaler sur mon solde réel** : on note le solde affiché par la banque ;
+  l'écart avec les opérations saisies devient une opération « Écart avec le
+  solde réel », pour repartir du bon montant.
+- **Trois styles** au choix, mémorisés : Quai (tableau des départs, reste en
+  volets jaunes et compte à rebours J-x jusqu'à la paie), Pop (aplats et
+  contours épais) et Classique (vert billet, suit le thème du téléphone).
 - **Notifs** : guide pour relier les notifications de paiement du téléphone
   (Raccourcis sur iPhone, MacroDroid sur Android) et testeur de lecture.
 - Lecture du texte d'une notification bancaire : montant, commerçant, date,
