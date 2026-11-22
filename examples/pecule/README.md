@@ -12,8 +12,13 @@ Version en ligne (privée, liée au compte Claude du propriétaire) :
 - **Opérations** : liste des dépenses et revenus par jour, recherche, filtres,
   modification et suppression.
 - **Budgets** : revenus en plusieurs versements (par exemple un acompte et un
-  solde, chacun avec son jour de paie), épargne visée, charges fixes déduites
-  automatiquement, budget par catégorie avec répartition proposée.
+  solde, chacun avec son jour de paie), épargne répartie sur plusieurs comptes,
+  charges fixes déduites automatiquement, budget par catégorie avec
+  répartition proposée.
+- Un virement vers un compte d'épargne (livret, LDDS, assurance vie, coffre…)
+  est reconnu comme de l'épargne, pas comme une dépense, et relié au bon
+  compte par son nom ou son montant. La carte « Épargne du mois » montre ce
+  qui est versé et ce qui reste à verser.
 - Un virement de salaire collé est relié au bon versement (par son nom, les
   mots « salaire / acompte / paie », ou le montant le plus proche) : le
   montant réellement reçu remplace le montant prévu pour le mois.
