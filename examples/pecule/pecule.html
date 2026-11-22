@@ -1353,22 +1353,15 @@ function renderNotifs(fromSnap) {
   if (fromSnap && el.contains(document.activeElement) && el.querySelector('#t-paste')) return;
   const ios = S.platform === 'ios';
   const iosSteps = `<ol class="steps">
-      <li><div>Ouvre l’app <b>Raccourcis</b> et va dans l’onglet <b>Automatisation</b> en bas (pas « Raccourcis » : un raccourci normal ne se lance pas tout seul). Touche <b>+</b> ou <b>Nouvelle automatisation</b>.</div></li>
-      <li><div>Choisis <b>Transaction</b>. Sélectionne tes cartes, garde toutes les catégories et coche <b>Exécuter immédiatement</b>. Touche <b>Suivant</b>, puis <b>Nouveau raccourci vide</b>.</div></li>
-      <li><div>Ajoute l’action <b>Texte</b>. Insère la variable <b>Saisie du raccourci</b> et touche-la pour choisir <b>Montant</b>. Écris <kbd>chez</kbd>, puis insère à nouveau la variable en choisissant <b>Commerçant</b>.</div></li>
-      <li><div>Ajoute l’action <b>Copier dans le presse-papiers</b>.</div></li>
-      <li><div>Ajoute l’action <b>URL</b> et remplace son contenu par ce lien :${codebox('ajout', 'ios')}Puis ajoute l’action <b>Ouvrir les URL</b> juste en dessous, et touche <b>OK</b>.</div></li>
-      <li><div>Au prochain paiement, Pécule s’ouvre sur l’écran d’ajout. Touche la zone verte, puis <b>Coller</b> : le montant, le commerçant et la catégorie se remplissent. Vérifie et enregistre.</div></li>
+      <li><div>Ouvre l’app <b>Raccourcis</b>, onglet <b>Automatisation</b>, puis touche <b>+</b>. Si l’iPhone propose « Décrire un raccourci », touche <b>✕</b> pour voir la liste.</div></li>
+      <li><div>Dans la liste des déclencheurs (filtre <b>Automatisation</b>), section <b>Apps</b>, choisis <b>Notification</b> : « Lorsque je reçois une notification de l’app… ». Touche le mot <b>app</b> et choisis l’app de ta banque. Si l’option existe, coche <b>Exécuter immédiatement</b>.</div></li>
+      <li><div>Efface le filtre de la recherche, puis ajoute l’action <b>Copier dans le presse-papiers</b>. Elle doit copier <b>Saisie du raccourci</b>, c’est-à-dire la notification.</div></li>
+      <li><div>Ajoute l’action <b>URL</b> et remplace son contenu par ce lien :${codebox('ajout', 'ios')}Puis ajoute <b>Ouvrir les URL</b> juste en dessous, et touche <b>OK</b>.</div></li>
+      <li><div>À la prochaine notification de paiement, Pécule s’ouvre sur l’écran d’ajout. Touche la zone verte, puis <b>Coller</b> : le montant, le commerçant et la catégorie se remplissent. Vérifie et enregistre.</div></li>
     </ol>
-    <p class="hint" style="margin-top:14px">Cette automatisation se déclenche pour les paiements Apple Pay. iOS ne laisse aucune app lire les notifications de ta banque : pour un paiement avec la carte physique ou en ligne, utilise le bouton <b>+</b>.</p>
-    <details><summary>Version sans copier-coller (plus longue à régler)</summary>
-      <p class="hint" style="margin-top:10px">Pécule sait aussi lire un lien du type <kbd>#d-2390-carrefour-city</kbd> : le montant en centimes, puis le commerçant en minuscules sans accents, les mots séparés par des tirets.</p>
-      <ul class="hint">
-        <li>À la place des actions 3 et 4 : <b>Obtenir les nombres</b> depuis Montant, <b>Calculer</b> × 100, puis <b>Arrondir</b>.</li>
-        <li>Pour le commerçant : <b>Changer la casse</b> en minuscules, puis <b>Remplacer le texte</b> avec l’expression régulière <kbd>[^a-z0-9]+</kbd> remplacée par <kbd>-</kbd>.</li>
-        <li>Dans l’action <b>URL</b>, écris le lien de la page suivi de <kbd>#d-</kbd>, du nombre, d’un tiret et du texte obtenu.</li>
-      </ul>
-      <p class="hint" style="margin-top:8px">Si l’écran d’ajout s’ouvre vide, ton téléphone a coupé la fin du lien : garde la version avec copier-coller.</p>
+    <p class="hint" style="margin-top:14px">Ce déclencheur existe dans les versions récentes d’iOS et marche pour tout ce que ta banque notifie, carte physique et achats en ligne compris. Si Pécule s’ouvre aussi pour des notifications sans montant (promo, anniversaire…), ajoute avant la copie une action <b>Si</b> « Saisie du raccourci contient EUR » et place les autres actions dedans.</p>
+    <details><summary>Sur un iOS plus ancien, sans déclencheur « Notification »</summary>
+      <p class="hint" style="margin-top:10px">Utilise le déclencheur <b>Transaction</b> : il ne marche que pour les paiements Apple Pay, avec la carte ajoutée dans l’app Cartes. Ajoute une action <b>Texte</b> avec les variables <b>Montant</b> et <b>Commerçant</b> de « Saisie du raccourci », séparées par <kbd>chez</kbd>, puis les mêmes actions <b>Copier dans le presse-papiers</b>, <b>URL</b> et <b>Ouvrir les URL</b>.</p>
     </details>`;
   const androidSteps = `<ol class="steps">
       <li><div>Installe l’app gratuite <b>MacroDroid</b> depuis le Play Store, puis touche <b>Ajouter une macro</b>.</div></li>
