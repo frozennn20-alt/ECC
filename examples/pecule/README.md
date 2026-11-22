@@ -7,13 +7,16 @@ Version en ligne (privée, liée au compte Claude du propriétaire) :
 
 ## Ce que fait l'application
 
-- **Mois** : reste à dépenser, montant par jour jusqu'à la fin du mois, rythme
-  de dépense comparé au budget, suivi par catégorie, historique sur six mois.
+- **Mois** : sur le mois en cours, le budget se compte par paie, d'un
+  versement au suivant (par exemple de l'acompte du 20 au solde du 7) : reste
+  jusqu'à la prochaine paie, montant par jour, charges et épargne qui tombent
+  sur cette paie, rythme des dépenses courantes. Les autres mois gardent un
+  bilan mensuel. Suivi par catégorie et historique sur six mois.
 - **Opérations** : liste des dépenses et revenus par jour, recherche, filtres,
   modification et suppression.
 - **Budgets** : revenus en plusieurs versements (par exemple un acompte et un
-  solde, chacun avec son jour de paie), épargne répartie sur plusieurs comptes,
-  charges fixes déduites automatiquement, budget par catégorie avec
+  solde, chacun avec son jour de paie), épargne répartie sur plusieurs comptes
+  et charges fixes, chacune avec son jour, budget par catégorie avec
   répartition proposée.
 - Un virement vers un compte d'épargne (livret, LDDS, assurance vie, coffre…)
   est reconnu comme de l'épargne, pas comme une dépense, et relié au bon

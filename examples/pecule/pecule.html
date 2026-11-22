@@ -498,7 +498,7 @@ function parseNotif(raw, now = new Date()) {
 }
 
 const KEYWORDS = [
-  ['exceptionnel', ['taxe', 'impot', 'amende', 'contravention', 'antai', 'dgfip', 'tresor public', 'finances publiques', 'spf finances', 'notaire', 'mise en circulation', 'carte grise', 'ants', 'huissier']],
+  ['exceptionnel', ['taxe', 'impot', 'amende', 'contravention', 'antai', 'dgfip', 'tresor public', 'finances publiques', 'spf finances', 'spw finances', 'spw', 'notaire', 'mise en circulation', 'carte grise', 'ants', 'huissier']],
   ['abonnements', ['netflix', 'spotify', 'deezer', 'disney', 'amazon prime', 'prime video', 'canal', 'apple com', 'apple bill', 'itunes', 'icloud', 'youtube', 'google one', 'google storage', 'free mobile', 'free telecom', 'freebox', 'sfr', 'orange', 'bouygues', 'sosh', 'red by sfr', 'b you', 'basic fit', 'fitness park', 'keepcool', 'neoness', 'chatgpt', 'openai', 'anthropic', 'claude ai', 'adobe', 'microsoft', 'office 365', 'game pass', 'playstation plus', 'audible', 'kindle', 'molotov', 'dazn', 'bein', 'crunchyroll', 'twitch', 'patreon', 'mediapart', 'le monde', 'lequipe']],
   ['resto', ['uber eats', 'ubereats', 'deliveroo', 'just eat', 'mcdonald', 'mcdo', 'burger king', 'kfc', 'starbucks', 'subway', 'five guys', 'domino', 'pizza', 'sushi', 'tacos', 'restaurant', 'resto', 'brasserie', 'bistro', 'bistrot', 'cafe', 'bar', 'kebab', 'burger', 'columbus', 'pret a manger', 'exki', 'pomme de pain', 'brioche doree', 'cojean', 'big fernand', 'buffalo grill', 'hippopotamus', 'flunch', 'crous', 'creperie']],
   ['courses', ['carrefour', 'leclerc', 'auchan', 'lidl', 'aldi', 'intermarche', 'monoprix', 'franprix', 'casino', 'super u', 'hyper u', 'u express', 'systeme u', 'picard', 'biocoop', 'naturalia', 'grand frais', 'netto', 'spar', 'g20', 'cora', 'match', 'la vie claire', 'epicerie', 'boulangerie', 'boucherie', 'primeur', 'supermarche', 'marche', 'paul']],
@@ -543,6 +543,7 @@ const DEFAULT_CATS = [
 ];
 const defaultSettings = () => ({ v: 3, incomes: [], savings: [], fixed: [], cats: DEFAULT_CATS.map(({ id, name, color, oneoff }) => ({ id, name, color, budget: 0, ...(oneoff ? { oneoff: true } : {}) })), memory: {} });
 
+const dayOf = v => (Number.isInteger(v) && v >= 1 && v <= 31 ? v : 0);
 function normalizeSettings(raw) {
   const d = defaultSettings();
   if (!raw || typeof raw !== 'object') return d;
@@ -552,7 +553,7 @@ function normalizeSettings(raw) {
     ? raw.cats.filter(c => c && typeof c.id === 'string' && c.id).map(c => ({ id: str(c.id, 40), name: str(c.name, 40), color: Number.isInteger(c.color) && c.color >= 1 && c.color <= 10 ? c.color : 7, budget: num(c.budget), ...(c.oneoff === true ? { oneoff: true } : {}) }))
     : d.cats;
   if (!cats.some(c => c.id === 'autre')) cats.push({ id: 'autre', name: 'Autre', color: 7, budget: 0 });
-  const fixed = Array.isArray(raw.fixed) ? raw.fixed.filter(f => f && typeof f === 'object').map(f => ({ id: str(f.id, 40) || rid('f'), name: str(f.name, 40), amount: num(f.amount) })) : [];
+  const fixed = Array.isArray(raw.fixed) ? raw.fixed.filter(f => f && typeof f === 'object').map(f => ({ id: str(f.id, 40) || rid('f'), name: str(f.name, 40), amount: num(f.amount), day: dayOf(f.day) })) : [];
   const memory = {};
   if (raw.memory && typeof raw.memory === 'object') for (const [k, v] of Object.entries(raw.memory)) if (typeof v === 'string') memory[k.slice(0, 60)] = v.slice(0, 40);
   let incomes = Array.isArray(raw.incomes)
@@ -560,7 +561,7 @@ function normalizeSettings(raw) {
     : [];
   if (!Array.isArray(raw.incomes) && num(raw.income) > 0) incomes = [{ id: 'i1', name: 'Salaire', amount: num(raw.income), day: 0 }];
   let savings = Array.isArray(raw.savings)
-    ? raw.savings.filter(a => a && typeof a === 'object').map(a => ({ id: str(a.id, 40) || rid('s'), name: str(a.name, 40), amount: num(a.amount) }))
+    ? raw.savings.filter(a => a && typeof a === 'object').map(a => ({ id: str(a.id, 40) || rid('s'), name: str(a.name, 40), amount: num(a.amount), day: dayOf(a.day) }))
     : [];
   if (!Array.isArray(raw.savings) && num(raw.savings) > 0) savings = [{ id: 's1', name: 'Épargne', amount: num(raw.savings) }];
   return { v: 3, incomes, savings, fixed, cats, memory };
@@ -640,6 +641,62 @@ function stats(ym) {
   const oneoff = sum(out.filter(t => oneoffIds.has(catOf(t.cat, st).id)));
   const expected = (available - oneoff) * dayIdx / dim;
   return { txs, out, inc, saves, pots, bills, fixedTx, extraSaved, saving, plannedSaving, spent, extra, fixed, income, base, sources, available, remaining, byCat, dim, isCurrent, isPast, isFuture, today, dayIdx, daysLeft, expected, perDay: daysLeft > 0 ? remaining / daysLeft : null, delta: (spent - oneoff) - expected, oneoff, oneoffIds };
+}
+
+/* ---------- pay period ----------
+   Une période va d'une paie (jour prévu) à la suivante, par exemple de
+   l'acompte du 20 au solde du 7. L'argent de cette paie doit couvrir les
+   dépenses, et les charges et l'épargne dont le jour tombe dans la période. */
+const DAY_MS = 86400000;
+const fmtDM = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+function periodStats() {
+  const st = cur().settings;
+  const pays = st.incomes.filter(i => i.day >= 1 && i.amount > 0);
+  if (!pays.length) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const occ = (y, m, day) => new Date(y, m, Math.min(day, new Date(y, m + 1, 0).getDate()));
+  const marks = [];
+  for (const i of pays) for (const k of [-1, 0, 1]) marks.push({ d: occ(today.getFullYear(), today.getMonth() + k, i.day), i });
+  const prev = marks.filter(x => x.d <= today).sort((a, b) => b.d - a.d)[0];
+  const next = marks.filter(x => x.d > today).sort((a, b) => a.d - b.d)[0];
+  if (!prev || !next) return null;
+  const start = prev.d, end = next.d;
+  const sISO = isoDate(start), eISO = isoDate(end);
+  const totalDays = Math.round((end - start) / DAY_MS);
+  const daysLeft = Math.round((end - today) / DAY_MS);
+  const elapsed = totalDays - daysLeft + 1;
+  const yms = [...new Set([sISO.slice(0, 7), isoDate(new Date(end - DAY_MS)).slice(0, 7)])];
+  const txs = yms.flatMap(ym => txOf(ym)).filter(t => t.date >= sISO && t.date < eISO);
+  const inc = txs.filter(t => t.kind === 'in');
+  const own = inc.filter(t => t.inc === prev.i.id);
+  const received = own.length ? sum(own) : prev.i.amount;
+  const extra = sum(inc.filter(t => t.inc !== prev.i.id));
+  const out = txs.filter(t => t.kind === 'out');
+  const fixedTx = txs.filter(t => t.kind === 'fixed');
+  const saves = txs.filter(t => t.kind === 'save');
+  const paid = sum(out) + sum(fixedTx) + sum(saves);
+  const inPeriod = day => {
+    if (!day) return null;
+    for (const k of [0, 1]) { const d = occ(start.getFullYear(), start.getMonth() + k, day); if (d >= start && d < end) return d; }
+    return null;
+  };
+  const items = [];
+  const add = (x, type, got) => { const when = inPeriod(x.day); if (when && x.amount > 0) items.push({ ...x, type, when, done: got.length > 0, actual: sum(got), value: got.length ? sum(got) : x.amount, tx: got[0] || null }); };
+  for (const f of st.fixed) add(f, 'fixed', fixedTx.filter(t => t.fix === f.id));
+  for (const a of st.savings) add(a, 'save', saves.filter(t => t.sav === a.id));
+  items.sort((a, b) => a.when - b.when);
+  const undated = st.fixed.filter(f => !f.day && f.amount > 0 && !fixedTx.some(t => t.fix === f.id))
+    .concat(st.savings.filter(a => !a.day && a.amount > 0 && !saves.some(t => t.sav === a.id)));
+  const upcoming = items.filter(x => !x.done).reduce((a, x) => a + x.value, 0);
+  const pool = received + extra;
+  const reste = pool - paid - upcoming;
+  const oneoffIds = new Set(st.cats.filter(c => c.oneoff).map(c => c.id));
+  const regular = out.filter(t => !oneoffIds.has(catOf(t.cat, st).id));
+  const linked = (t, type) => items.some(x => x.type === type && x.id === (type === 'fixed' ? t.fix : t.sav));
+  const committed = items.reduce((a, x) => a + x.value, 0) + sum(fixedTx.filter(t => !linked(t, 'fixed'))) + sum(saves.filter(t => !linked(t, 'save'))) + sum(out) - sum(regular);
+  const varBudget = pool - committed;
+  const expected = varBudget * elapsed / totalDays;
+  return { start, end, prev, next, totalDays, daysLeft, elapsed, received, own: own.length > 0, extra, pool, paid, items, undated, upcoming, reste, perDay: daysLeft > 0 ? reste / daysLeft : null, regular, varBudget, delta: sum(regular) - expected, txs };
 }
 
 /* ---------- storage ---------- */
@@ -760,7 +817,7 @@ function makeDemo() {
   let a = 20261121;
   const rnd = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
   const budgets = { courses: 320, resto: 140, transport: 110, shopping: 120, loisirs: 100, sante: 40, maison: 90, abonnements: 45, autre: 80 };
-  const settings = { v: 3, incomes: [{ id: 'i1', name: 'Acompte', amount: 600, day: 15 }, { id: 'i2', name: 'Solde', amount: 1500, day: 30 }], savings: [{ id: 's1', name: 'Livret A', amount: 150 }, { id: 's2', name: 'Assurance vie', amount: 100 }], fixed: [{ id: 'f1', name: 'Loyer', amount: 720 }, { id: 'f2', name: 'Forfait mobile', amount: 15 }, { id: 'f3', name: 'Assurance habitation', amount: 28 }], cats: DEFAULT_CATS.map(({ id, name, color, oneoff }) => ({ id, name, color, budget: budgets[id] || 0, ...(oneoff ? { oneoff: true } : {}) })), memory: {} };
+  const settings = { v: 3, incomes: [{ id: 'i1', name: 'Acompte', amount: 600, day: 15 }, { id: 'i2', name: 'Solde', amount: 1500, day: 30 }], savings: [{ id: 's1', name: 'Livret A', amount: 150, day: 16 }, { id: 's2', name: 'Assurance vie', amount: 100, day: 28 }], fixed: [{ id: 'f1', name: 'Loyer', amount: 720, day: 5 }, { id: 'f2', name: 'Forfait mobile', amount: 15, day: 10 }, { id: 'f3', name: 'Assurance habitation', amount: 28, day: 12 }], cats: DEFAULT_CATS.map(({ id, name, color, oneoff }) => ({ id, name, color, budget: budgets[id] || 0, ...(oneoff ? { oneoff: true } : {}) })), memory: {} };
   const pool = [
     ['Carrefour City', 'courses', 12, 48, 5], ['Lidl', 'courses', 25, 70, 3], ['Boulangerie Ange', 'courses', 3, 9, 4], ['Monoprix', 'courses', 8, 35, 3],
     ['Starbucks', 'resto', 4, 7, 3], ['Uber Eats', 'resto', 16, 32, 2], ['Le Petit Bistrot', 'resto', 18, 42, 2], ['Pret A Manger', 'resto', 8, 13, 2],
@@ -894,7 +951,7 @@ function paydaysHTML(s) {
 }
 
 /* « Ce mois-ci » : charges fixes et épargne à cocher dès qu'elles sont parties. */
-function planRow(item, type, s) {
+function planRow(item, type, s, when) {
   const doneWord = type === 'fixed' ? 'payé' : 'versé';
   const name = item.name || (type === 'fixed' ? 'Charge fixe' : 'Épargne');
   let action;
@@ -902,7 +959,7 @@ function planRow(item, type, s) {
   else if (s.isFuture) action = '<span class="pill">prévu</span>';
   else action = `<button class="btn small mark-btn" type="button" data-act="mark" data-type="${type}" data-id="${esc(item.id)}">Marquer ${doneWord}</button>`;
   const diff = item.done && Math.abs(item.actual - item.amount) >= 1 ? ` <span class="muted">/ ${eur0(item.amount)}</span>` : '';
-  return `<li class="sav${item.done ? ' done' : ''}"><span class="sav-name">${esc(name)}</span><span class="mono">${eur0(item.value)}${diff}</span>${action}</li>`;
+  return `<li class="sav${item.done ? ' done' : ''}"><span class="sav-name">${esc(name)}${when ? ` <span class="muted">· ${esc(when)}</span>` : ''}</span><span class="mono">${eur0(item.value)}${diff}</span>${action}</li>`;
 }
 
 function planHTML(s) {
@@ -925,6 +982,47 @@ function planHTML(s) {
   return `<section class="card"><h2>Ce mois-ci <small>${all.length ? `${doneCount} sur ${all.length} réglé${doneCount > 1 ? 's' : ''}` : ''}</small></h2>
     ${body}${notes.length ? `<p class="foot-note">${esc(notes.join(' '))}</p>` : ''}
   </section>`;
+}
+
+function periodHeroHTML(ps) {
+  const over = ps.reste < 0;
+  const used = ps.pool > 0 ? Math.min(100, (ps.paid + ps.upcoming) / ps.pool * 100) : 100;
+  const sub = over ? `Il te manque <b>${eur(-ps.reste)}</b> d’ici le ${esc(fmtDM(ps.end))}` : `Soit <b>${eur(ps.perDay)}</b> par jour pendant ${plural(ps.daysLeft, 'jour', 'jours')}`;
+  const chips = `<div class="paydays" aria-label="Paies"><span class="payday ${ps.own ? 'ok' : 'past'}"><b>${esc(ps.prev.i.name || 'Paie')}</b> ${esc(eur0(ps.received))} · ${ps.own ? 'reçu le' : 'le'} ${esc(fmtDM(ps.start))}</span><span class="payday wait"><b>${esc(ps.next.i.name || 'Paie')}</b> ${esc(eur0(ps.next.i.amount))} · le ${esc(fmtDM(ps.end))}, dans ${plural(ps.daysLeft, 'jour', 'jours')}</span></div>`;
+  let pace = '';
+  if (ps.varBudget > 0 && ps.elapsed > 0) {
+    const tol = Math.max(5, ps.varBudget * 0.02);
+    if (Math.abs(ps.delta) < tol) pace = '<span class="pace">Pile dans ton rythme</span>';
+    else if (ps.delta > 0) pace = `<span class="pace ahead">${eur0(ps.delta)} au-dessus de ton rythme</span>`;
+    else pace = `<span class="pace">${eur0(-ps.delta)} sous ton rythme</span>`;
+  }
+  const calc = [`${eur0(ps.pool)} reçus`, `${eur0(ps.paid)} payés`];
+  if (ps.upcoming) calc.push(`${eur0(ps.upcoming)} à venir`);
+  return `<section class="hero"><canvas id="guilloche" aria-hidden="true"></canvas>
+    <div class="eyebrow">Reste jusqu’au ${esc(fmtDM(ps.end))}</div>
+    <div class="big${over ? ' neg' : ''}">${eur(ps.reste)}</div>
+    <div class="hero-sub">${sub}</div>${chips}
+    <div class="meter" role="img" aria-label="${Math.round(used)} % de la paie déjà payé ou réservé"><span class="${over ? 'over' : ''}" style="width:${used.toFixed(1)}%"></span><i style="left:${(ps.elapsed / ps.totalDays * 100).toFixed(1)}%" title="Aujourd'hui"></i></div>
+    <div class="hero-row"><span>Déjà payé ${eur(ps.paid)}</span><span>À venir ${eur(ps.upcoming)}</span></div>
+    <div class="hero-foot">${pace}<span class="calc">${esc(calc.join(' − '))}</span></div>
+  </section>`;
+}
+
+function periodPlanHTML(ps) {
+  if (!ps.items.length && !ps.undated.length) return '';
+  const done = ps.items.filter(x => x.done).length;
+  const rows = ps.items.map(x => planRow(x, x.type, { isFuture: false }, `le ${fmtDM(x.when)}`)).join('');
+  const undated = ps.undated.length ? `<p class="foot-note">Sans jour indiqué : ${esc(ps.undated.map(x => `${x.name || 'Sans nom'} ${eur0(x.amount)}`).join(', '))}. Indique leur jour dans <button class="btn ghost small" type="button" data-go="budgets">Budgets</button> pour savoir s’ils tombent sur cette paie.</p>` : '';
+  return `<section class="card"><h2>À régler avant le ${esc(fmtDM(ps.end))} <small>${ps.items.length ? `${done} sur ${ps.items.length} réglé${done > 1 ? 's' : ''}` : ''}</small></h2>
+    ${rows ? `<ul class="savs">${rows}</ul>` : ''}${undated}
+    ${ps.items.length && done < ps.items.length ? '<p class="foot-note">Dès qu’un prélèvement ou un virement est parti, touche « Marquer payé » ou « Marquer versé ». Coller sa notification fait la même chose.</p>' : ''}
+  </section>`;
+}
+
+function periodPaceHTML(ps) {
+  return `<section class="card"><h2>Rythme depuis le ${esc(fmtDM(ps.start))} <small>dépenses courantes</small></h2><div class="chart" id="pace-chart"></div>
+    <div class="legend"><span><i></i>Tes dépenses</span><span><i class="dash"></i>Rythme qui tient jusqu’au ${esc(fmtDM(ps.end))}</span></div>
+    <p class="foot-note">Une fois tes charges fixes, ton épargne et tes dépenses exceptionnelles mises à part, il te reste ${esc(eur0(ps.varBudget))} pour les dépenses courantes de cette paie.</p></section>`;
 }
 
 function welcomeHTML() {
@@ -966,9 +1064,9 @@ function txRow(t, st) {
   return `<button class="tx" type="button" data-tx="${esc(t.id)}" data-ym="${esc(t.ym)}" style="--c:var(--c${c.color})"><span class="tx-ico" aria-hidden="true">${esc(initial)}</span><span class="tx-main"><span class="tx-label">${esc(t.label || fallback)}</span><span class="tx-meta">${esc(meta.join(' · '))}</span></span><span class="tx-amt mono${isIn ? ' in' : isSave ? ' save' : ''}">${isIn ? '+' : isSave ? '' : '−'}${eur(t.amount)}</span></button>`;
 }
 
-function recentHTML(s) {
+function recentHTML(s, txs) {
   const st = cur().settings;
-  const list = s.txs.slice().sort(byNewest).slice(0, 5);
+  const list = (txs || s.txs).slice().sort(byNewest).slice(0, 5);
   const body = list.length ? `<div class="txs">${list.map(t => txRow(t, st)).join('')}</div>` : `<p class="empty">Aucune opération ce mois-ci. Touche <b>+</b> pour en ajouter une.</p>`;
   return `<section class="card"><h2>Dernières opérations ${list.length ? '<button class="btn ghost small" type="button" data-go="operations">Tout voir</button>' : ''}</h2>${body}</section>`;
 }
@@ -991,11 +1089,13 @@ function renderMois() {
   const s = stats(S.ym);
   const parts = [monthNav()];
   if (!S.demo && !real.hasData) parts.push(welcomeHTML());
-  parts.push(heroHTML(s));
-  if (s.base > 0 && s.available - s.oneoff > 0 && !s.isFuture) parts.push(`<section class="card"><h2>Rythme du mois <small>dépenses cumulées</small></h2><div class="chart" id="pace-chart"></div><div class="legend"><span><i></i>Tes dépenses</span><span><i class="dash"></i>Rythme qui tient le budget</span>${s.oneoff ? `<span>Hors dépenses exceptionnelles (${esc(eur0(s.oneoff))})</span>` : ''}</div></section>`);
-  parts.push(planHTML(s));
+  const ps = S.ym === curYM() ? periodStats() : null;
+  parts.push(ps ? periodHeroHTML(ps) : heroHTML(s));
+  if (ps) { if (ps.varBudget > 0) parts.push(periodPaceHTML(ps)); parts.push(periodPlanHTML(ps)); }
+  else if (s.base > 0 && s.available - s.oneoff > 0 && !s.isFuture) parts.push(`<section class="card"><h2>Rythme du mois <small>dépenses cumulées</small></h2><div class="chart" id="pace-chart"></div><div class="legend"><span><i></i>Tes dépenses</span><span><i class="dash"></i>Rythme qui tient le budget</span>${s.oneoff ? `<span>Hors dépenses exceptionnelles (${esc(eur0(s.oneoff))})</span>` : ''}</div></section>`);
+  if (!ps) parts.push(planHTML(s));
   parts.push(catsHTML(s));
-  parts.push(recentHTML(s));
+  parts.push(recentHTML(s, ps ? ps.txs : null));
   if (historyData().filter(h => h.spent > 0).length >= 2) parts.push(`<section class="card"><h2>Six derniers mois <small>dépenses variables</small></h2><div class="chart" id="hist-chart"></div></section>`);
   if (caps.sample && (s.spent > 0 || s.base > 0)) {
     const adv = S.advice && S.advice.ym === S.ym ? S.advice : null;
@@ -1004,7 +1104,7 @@ function renderMois() {
       ${adv && adv.err ? `<p class="err" style="margin-top:10px">${esc(adv.err)}</p>` : ''}<div class="advice-out" id="advice-out">${adv ? esc(adv.text) : ''}</div></section>`);
   }
   el.innerHTML = parts.join('');
-  drawHero(); drawPace(s); drawHistory(s);
+  drawHero(); if (ps) drawPacePeriod(ps); else drawPace(s); drawHistory(s);
 }
 
 function renderOps() {
@@ -1047,6 +1147,7 @@ function renderOpsList() {
   box.innerHTML = `<div class="txs">${html}</div>${fixedNote}`;
 }
 
+const dayIn = v => { const d = parseInt(v, 10); return d >= 1 && d <= 31 ? d : 0; };
 const fmtIn = n => (n ? (Number.isInteger(round2(n)) ? String(round2(n)) : round2(n).toFixed(2).replace('.', ',')) : '');
 
 function renderBudgets(fromSnap) {
@@ -1054,9 +1155,9 @@ function renderBudgets(fromSnap) {
   if (!S.loaded) { el.innerHTML = '<section class="card empty">Chargement de tes comptes…</section>'; return; }
   if (fromSnap && el.querySelector('#b-incsum') && el.contains(document.activeElement)) { updateBudgetSummary(); return; }
   const st = cur().settings;
-  const savRows = st.savings.map(a => `<div class="edit-row nofix"><input id="sv-n-${esc(a.id)}" data-sav="${esc(a.id)}" data-f="name" value="${esc(a.name)}" maxlength="40" placeholder="Ex. : Livret A" aria-label="Nom du compte d’épargne"><div class="money"><input id="sv-a-${esc(a.id)}" data-sav="${esc(a.id)}" data-f="amount" inputmode="decimal" value="${fmtIn(a.amount)}" placeholder="0" aria-label="Montant épargné chaque mois"></div><button class="x-btn" type="button" data-act="del-sav" data-id="${esc(a.id)}" aria-label="Retirer ce compte">×</button></div>`).join('');
+  const savRows = st.savings.map(a => `<div class="edit-row inc"><input id="sv-n-${esc(a.id)}" data-sav="${esc(a.id)}" data-f="name" value="${esc(a.name)}" maxlength="40" placeholder="Ex. : Livret A" aria-label="Nom du compte d’épargne"><div class="money"><input id="sv-a-${esc(a.id)}" data-sav="${esc(a.id)}" data-f="amount" inputmode="decimal" value="${fmtIn(a.amount)}" placeholder="0" aria-label="Montant épargné chaque mois"></div><input class="day-in" id="sv-d-${esc(a.id)}" data-sav="${esc(a.id)}" data-f="day" inputmode="numeric" maxlength="2" value="${a.day || ''}" placeholder="—" aria-label="Jour du virement dans le mois"><button class="x-btn" type="button" data-act="del-sav" data-id="${esc(a.id)}" aria-label="Retirer ce compte">×</button></div>`).join('');
   const incRows =st.incomes.map(i => `<div class="edit-row inc"><input id="in-n-${esc(i.id)}" data-income="${esc(i.id)}" data-f="name" value="${esc(i.name)}" maxlength="40" placeholder="Ex. : Acompte" aria-label="Nom du versement"><div class="money"><input id="in-a-${esc(i.id)}" data-income="${esc(i.id)}" data-f="amount" inputmode="decimal" value="${fmtIn(i.amount)}" placeholder="0" aria-label="Montant net prévu"></div><input class="day-in" id="in-d-${esc(i.id)}" data-income="${esc(i.id)}" data-f="day" inputmode="numeric" maxlength="2" value="${i.day || ''}" placeholder="—" aria-label="Jour du versement dans le mois"><button class="x-btn" type="button" data-act="del-income" data-id="${esc(i.id)}" aria-label="Retirer ce versement">×</button></div>`).join('');
-  const fixedRows = st.fixed.map(f => `<div class="edit-row nofix"><input id="fx-n-${esc(f.id)}" data-fixed="${esc(f.id)}" data-f="name" value="${esc(f.name)}" placeholder="Ex. : Loyer" aria-label="Nom de la charge"><div class="money"><input id="fx-a-${esc(f.id)}" data-fixed="${esc(f.id)}" data-f="amount" inputmode="decimal" value="${fmtIn(f.amount)}" placeholder="0" aria-label="Montant mensuel"></div><button class="x-btn" type="button" data-act="del-fixed" data-id="${esc(f.id)}" aria-label="Retirer cette charge">×</button></div>`).join('');
+  const fixedRows = st.fixed.map(f => `<div class="edit-row inc"><input id="fx-n-${esc(f.id)}" data-fixed="${esc(f.id)}" data-f="name" value="${esc(f.name)}" placeholder="Ex. : Loyer" aria-label="Nom de la charge"><div class="money"><input id="fx-a-${esc(f.id)}" data-fixed="${esc(f.id)}" data-f="amount" inputmode="decimal" value="${fmtIn(f.amount)}" placeholder="0" aria-label="Montant mensuel"></div><input class="day-in" id="fx-d-${esc(f.id)}" data-fixed="${esc(f.id)}" data-f="day" inputmode="numeric" maxlength="2" value="${f.day || ''}" placeholder="—" aria-label="Jour du prélèvement dans le mois"><button class="x-btn" type="button" data-act="del-fixed" data-id="${esc(f.id)}" aria-label="Retirer cette charge">×</button></div>`).join('');
   const catRows = st.cats.map(c => `<div class="edit-row" style="--c:var(--c${c.color})"><span class="sw"></span><input id="ct-n-${esc(c.id)}" data-cat="${esc(c.id)}" data-f="name" value="${esc(c.name)}" maxlength="40" aria-label="Nom de la catégorie"><div class="money"><input id="ct-b-${esc(c.id)}" data-cat="${esc(c.id)}" data-f="budget" inputmode="decimal" value="${fmtIn(c.budget)}" placeholder="0" aria-label="Budget mensuel ${esc(c.name)}"></div><button class="x-btn" type="button" data-act="del-cat" data-id="${esc(c.id)}" aria-label="Supprimer la catégorie" ${c.id === 'autre' ? 'disabled' : ''}>×</button></div>`).join('');
   const modeTxt = S.demo ? "Mode exemple : rien n'est enregistré." : S.store === 'cloud' ? 'Tes données sont liées à ton compte Claude et synchronisées entre ton téléphone et ton ordinateur. Personne d’autre ne peut les lire, même si tu partages cette page.' : 'Tes données sont enregistrées dans ce navigateur uniquement. Elles disparaissent si tu effaces les données du site.';
   const memCount = Object.keys(st.memory).length;
@@ -1068,15 +1169,15 @@ function renderBudgets(fromSnap) {
       <div class="sum-line"><span class="muted">Total prévu par mois</span><b id="b-incsum"></b></div>
     </section>
     <section class="card"><h2>Ton épargne <small>mise de côté chaque mois</small></h2>
-      <p class="hint">Un compte par ligne. Ces montants sont retirés de ton budget dès le début du mois, pour que tu ne les dépenses pas.</p>
-      <div class="edit-list" style="margin-top:10px">${savRows || '<p class="muted" style="margin:0">Aucun compte d’épargne pour l’instant.</p>'}</div>
+      <p class="hint">Un compte par ligne. Ces montants sont mis à part pour que tu ne les dépenses pas. Le jour indique sur quelle paie part le virement.</p>
+      <div class="edit-list" style="margin-top:10px">${savRows ? `<div class="edit-head" aria-hidden="true"><span>Compte</span><span>Par mois</span><span>Jour</span><span></span></div>${savRows}` : '<p class="muted" style="margin:0">Aucun compte d’épargne pour l’instant.</p>'}</div>
       <button class="btn small" type="button" data-act="add-sav">+ Ajouter un compte</button>
       <div class="sum-line"><span class="muted">Total épargné par mois</span><b id="b-savsum"></b></div>
       <p class="hint" id="b-savehint" style="margin-top:8px"></p>
     </section>
     <section class="card"><h2>Charges fixes <small>prélevées chaque mois</small></h2>
-      <p class="hint">Loyer, voiture, forfait, assurances, crédit… Elles sont déduites de ton budget dès le début du mois. Quand l’une est prélevée, marque-la payée dans l’écran <b>Mois</b>.</p>
-      <div class="edit-list" style="margin-top:10px">${fixedRows || '<p class="muted" style="margin:0">Aucune charge fixe pour l’instant.</p>'}</div>
+      <p class="hint">Loyer, voiture, forfait, assurances, crédit… Elles sont déduites de ton budget dès le début du mois. Le jour du prélèvement indique sur quelle paie elle tombe. Quand elle est partie, marque-la payée dans l’écran <b>Mois</b>.</p>
+      <div class="edit-list" style="margin-top:10px">${fixedRows ? `<div class="edit-head" aria-hidden="true"><span>Charge</span><span>Par mois</span><span>Jour</span><span></span></div>${fixedRows}` : '<p class="muted" style="margin:0">Aucune charge fixe pour l’instant.</p>'}</div>
       <button class="btn small" type="button" data-act="add-fixed">+ Ajouter une charge</button>
       <div class="sum-line"><span class="muted">Total des charges fixes</span><b id="b-fixedsum"></b></div>
     </section>
@@ -1272,6 +1373,39 @@ function drawPace(s) {
   box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Dépenses cumulées : ${esc(eur0(peak))} au jour ${last}, pour un budget de ${esc(eur0(target))}">${g}</svg>`;
 }
 
+function drawPacePeriod(ps) {
+  const box = $('#pace-chart'); if (!box) return;
+  const W = Math.max(260, Math.round(box.clientWidth)), H = 160;
+  const m = { l: 6, r: 58, t: 14, b: 26 };
+  const n = ps.totalDays, last = ps.elapsed, target = ps.varBudget;
+  const daily = new Array(n + 1).fill(0);
+  for (const t of ps.regular) {
+    const [y, mo, d] = t.date.split('-').map(Number);
+    const i = Math.round((new Date(y, mo - 1, d) - ps.start) / DAY_MS) + 1;
+    if (i >= 1 && i <= n) daily[i] += t.amount;
+  }
+  const cum = [0];
+  for (let i = 1; i <= n; i++) cum[i] = cum[i - 1] + daily[i];
+  const peak = cum[last] || 0;
+  const ymax = Math.max(target, peak, 1) * 1.08;
+  const x = i => m.l + i / n * (W - m.l - m.r);
+  const y = v => H - m.b - v / ymax * (H - m.t - m.b);
+  let g = `<line class="ch-grid" x1="${m.l}" x2="${W - m.r}" y1="${y(0)}" y2="${y(0)}"/>`;
+  g += `<line class="ch-grid" x1="${m.l}" x2="${W - m.r}" y1="${y(target).toFixed(1)}" y2="${y(target).toFixed(1)}"/>`;
+  g += `<text class="ch-txt" x="${W - m.r + 6}" y="${(y(target) + 3.5).toFixed(1)}">${esc(eur0(target))}</text>`;
+  g += `<text class="ch-txt" x="${W - m.r + 6}" y="${(y(0) + 3.5).toFixed(1)}">0 €</text>`;
+  g += `<line class="ch-ideal" x1="${x(0)}" y1="${y(0)}" x2="${x(n).toFixed(1)}" y2="${y(target).toFixed(1)}"/>`;
+  let path = `M${x(0).toFixed(1)} ${y(0).toFixed(1)}`;
+  for (let i = 1; i <= last; i++) path += ` L${x(i).toFixed(1)} ${y(cum[i]).toFixed(1)}`;
+  g += `<path class="ch-area" d="${path} L${x(last).toFixed(1)} ${y(0).toFixed(1)} Z"/><path class="ch-line" d="${path}"/>`;
+  g += `<circle class="ch-dot" cx="${x(last).toFixed(1)}" cy="${y(peak).toFixed(1)}" r="4.5"/>`;
+  if (Math.abs(y(peak) - y(target)) > 14 && Math.abs(y(peak) - y(0)) > 12) g += `<text class="ch-val" x="${W - m.r + 6}" y="${(y(peak) + 3.5).toFixed(1)}">${esc(eur0(peak))}</text>`;
+  const dateAt = i => new Date(ps.start.getTime() + (i - 1) * DAY_MS);
+  const ticks = [[1, 'start'], [Math.round((n + 1) / 2), 'middle'], [n, 'end']];
+  for (const [i, anchor] of ticks) g += `<text class="ch-txt" x="${x(anchor === 'start' ? 0 : i).toFixed(1)}" y="${H - 8}" text-anchor="${anchor}">${esc(fmtDM(dateAt(i)))}</text>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Dépenses courantes depuis le ${esc(fmtDM(ps.start))} : ${esc(eur0(peak))}, pour ${esc(eur0(target))} jusqu’au ${esc(fmtDM(ps.end))}">${g}</svg>`;
+}
+
 function drawHistory(s) {
   const box = $('#hist-chart'); if (!box) return;
   const data = historyData();
@@ -1315,7 +1449,9 @@ function guessSav(label, date, amount) {
   const open = st.savings.filter(a => !done.has(a.id));
   const pool = open.length ? open : st.savings;
   if (amount > 0) {
-    const close = pool.filter(a => a.amount > 0 && Math.abs(amount - a.amount) / a.amount <= 0.25).sort((a, b) => Math.abs(amount - a.amount) - Math.abs(amount - b.amount));
+    const d = +iso.slice(8, 10);
+    const dist = a => (a.day ? Math.min(Math.abs(a.day - d), 31 - Math.abs(a.day - d)) : 16);
+    const close = pool.filter(a => a.amount > 0 && Math.abs(amount - a.amount) / a.amount <= 0.25).sort((a, b) => Math.abs(amount - a.amount) - Math.abs(amount - b.amount) || dist(a) - dist(b));
     if (close.length) return close[0].id;
   }
   return open.length === 1 ? open[0].id : '';
@@ -1716,7 +1852,7 @@ function bind() {
     if (!$('#v-budgets').contains(t)) return;
     if (t.dataset.sav) {
       const id = t.dataset.sav;
-      editSettings(s => { const a = s.savings.find(x => x.id === id); if (a) { if (t.dataset.f === 'name') a.name = t.value.slice(0, 40); else a.amount = Math.max(0, toNumber(t.value) || 0); } });
+      editSettings(s => { const a = s.savings.find(x => x.id === id); if (a) { if (t.dataset.f === 'name') a.name = t.value.slice(0, 40); else if (t.dataset.f === 'day') a.day = dayIn(t.value); else a.amount = Math.max(0, toNumber(t.value) || 0); } });
       updateBudgetSummary(); return;
     }
     if (t.dataset.income) {
@@ -1730,7 +1866,7 @@ function bind() {
       });
       updateBudgetSummary(); return;
     }
-    if (t.dataset.fixed) { const id = t.dataset.fixed; editSettings(s => { const f = s.fixed.find(x => x.id === id); if (f) { if (t.dataset.f === 'name') f.name = t.value.slice(0, 40); else f.amount = Math.max(0, toNumber(t.value) || 0); } }); updateBudgetSummary(); return; }
+    if (t.dataset.fixed) { const id = t.dataset.fixed; editSettings(s => { const f = s.fixed.find(x => x.id === id); if (f) { if (t.dataset.f === 'name') f.name = t.value.slice(0, 40); else if (t.dataset.f === 'day') f.day = dayIn(t.value); else f.amount = Math.max(0, toNumber(t.value) || 0); } }); updateBudgetSummary(); return; }
     if (t.dataset.cat) { const id = t.dataset.cat; editSettings(s => { const c = s.cats.find(x => x.id === id); if (c) { if (t.dataset.f === 'name') c.name = t.value.slice(0, 40); else c.budget = Math.max(0, toNumber(t.value) || 0); } }); updateBudgetSummary(); }
   });
 
@@ -1759,7 +1895,7 @@ function bind() {
 
   /* redraw charts on resize / theme change */
   let rz = null;
-  const redraw = () => { clearTimeout(rz); rz = setTimeout(() => { if (S.view === 'mois' && S.loaded) { const s = stats(S.ym); drawHero(); drawPace(s); drawHistory(s); } }, 120); };
+  const redraw = () => { clearTimeout(rz); rz = setTimeout(() => { if (S.view === 'mois' && S.loaded) { const s = stats(S.ym); const ps = S.ym === curYM() ? periodStats() : null; drawHero(); if (ps) drawPacePeriod(ps); else drawPace(s); drawHistory(s); } }, 120); };
   window.addEventListener('resize', redraw);
   try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', redraw); } catch (e) { /* ancien navigateur */ }
   new MutationObserver(redraw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
