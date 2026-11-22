@@ -17,8 +17,7 @@ Version en ligne (privée, liée au compte Claude du propriétaire) :
   répartition proposée.
 - Un virement vers un compte d'épargne (livret, LDDS, assurance vie, coffre…)
   est reconnu comme de l'épargne, pas comme une dépense, et relié au bon
-  compte par son nom ou son montant. La carte « Épargne du mois » montre ce
-  qui est versé et ce qui reste à verser.
+  compte par son nom ou son montant.
 - Carte « Ce mois-ci » : charges fixes et épargne à cocher d'un geste
   (« Marquer payé », « Marquer versé ») dès qu'elles sont parties. Coller la
   notification d'un prélèvement qui porte le nom d'une charge fixe la marque
